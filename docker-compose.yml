@@ -1,0 +1,30 @@
+version: '3.8'
+
+services:
+  ghanshyam-erp:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:5000}
+    container_name: ghanshyam-erp
+    restart: always
+    ports:
+      - "${FRONTEND_PORT:-3002}:3000"
+      - "${BACKEND_PORT:-5002}:5000"
+    environment:
+      - PORT=5000
+      - DATABASE_URL=file:./dev.db
+      - JWT_SECRET=${JWT_SECRET:-ghanshyam_ayurvedic_erp_super_secret_jwt_key_2026}
+      - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET:-ghanshyam_ayurvedic_erp_super_secret_refresh_key_2026}
+      - WHATSAPP_ACCESS_TOKEN=${WHATSAPP_ACCESS_TOKEN:-}
+      - WHATSAPP_PHONE_NUMBER_ID=${WHATSAPP_PHONE_NUMBER_ID:-}
+      - CA_WHATSAPP_NUMBER=${CA_WHATSAPP_NUMBER:-}
+      - STORAGE_PROVIDER=local
+      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-http://localhost:5000}
+      - CORS_ORIGIN=${CORS_ORIGIN:-*}
+    volumes:
+      - erp-sqlite-data:/app/backend/prisma
+
+volumes:
+  erp-sqlite-data:

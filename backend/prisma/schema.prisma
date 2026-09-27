@@ -1,0 +1,816 @@
+// Ghanshyam Ayurvedic Pharmacy ERP Prisma Schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id               String       @id @default(uuid())
+  email            String       @unique
+  password         String
+  name             String
+  phone            String?
+  department       String?
+  designation      String?
+  employeeId       String?      @unique
+  isActive         Boolean      @default(true)
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+
+  userRoles           UserRole[]
+  sessions            Session[]
+  auditLogs           AuditLog[]
+  createdOrders       SalesOrder[]                 @relation("SalespersonOrders")
+  requestedRMRequests RawMaterialPurchaseRequest[] @relation("RequestedBySales")
+  approvedRMRequests  RawMaterialPurchaseRequest[] @relation("ApprovedByAdmin")
+  dispatches          Dispatch[]                   @relation("DispatchedBy")
+  verifiedDispatches  Dispatch[]                   @relation("VerifiedBy")
+  caExports           CAExport[]                   @relation("CAExporter")
+}
+
+model Role {
+  id              String           @id @default(uuid())
+  name            String           @unique // SUPER_ADMIN, SALES, STOCK_MANAGER, ACCOUNTANT, PRODUCTION, SUB_ADMIN
+  description     String?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  rolePermissions RolePermission[]
+  userRoles       UserRole[]
+}
+
+model Permission {
+  id              String           @id @default(uuid())
+  code            String           @unique // e.g. sales.view, raw_material.purchase_request.create, raw_material.purchase_order.approve
+  name            String
+  module          String           // sales, procurement, stock, production, accounts, users, admin
+  description     String?
+  createdAt       DateTime         @default(now())
+
+  rolePermissions RolePermission[]
+}
+
+model RolePermission {
+  id           String     @id @default(uuid())
+  roleId       String
+  permissionId String
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@unique([roleId, permissionId])
+}
+
+model UserRole {
+  id     String @id @default(uuid())
+  userId String
+  roleId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role   Role   @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, roleId])
+}
+
+model Session {
+  id           String   @id @default(uuid())
+  userId       String
+  refreshToken String
+  ipAddress    String?
+  userAgent    String?
+  expiresAt    DateTime
+  createdAt    DateTime @default(now())
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model AuditLog {
+  id            String   @id @default(uuid())
+  userId        String?
+  action        String   // e.g. SALES_ORDER_CREATED, RM_REQUEST_CREATED, PO_APPROVED, GOODS_RECEIPT
+  entity        String   // e.g. SalesOrder, RawMaterialPurchaseRequest, ProductionOrder
+  entityId      String?
+  previousValue String?  // JSON string
+  newValue      String?  // JSON string
+  ipAddress     String?
+  timestamp     DateTime @default(now())
+
+  user          User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+}
+
+model Employee {
+  id          String   @id @default(uuid())
+  employeeId  String   @unique
+  name        String
+  phone       String
+  email       String?
+  department  String
+  designation String
+  joiningDate String
+  status      String   @default("ACTIVE") // ACTIVE, INACTIVE, SUSPENDED
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Customer {
+  id                  String       @id @default(uuid())
+  name                String
+  companyName         String?
+  customerType        String       // B2B, B2C, DISTRIBUTOR, RETAILER, WHOLESALER, INSTITUTION, OTHER
+  gstin               String?
+  pan                 String?
+  phone               String
+  whatsapp            String?
+  email               String?
+  billingAddress      String
+  shippingAddress     String
+  state               String
+  city                String
+  pincode             String
+  creditLimit         Float        @default(100000)
+  paymentTerms        String       @default("NET_30")
+  assignedSalesperson String?
+  status              String       @default("ACTIVE")
+  createdAt           DateTime     @default(now())
+  updatedAt           DateTime     @updatedAt
+
+  salesOrders         SalesOrder[]
+  invoices            SalesInvoice[]
+  payments            Payment[]
+}
+
+model Supplier {
+  id                 String                       @id @default(uuid())
+  name               String
+  companyName        String?
+  gstin              String?
+  pan                String?
+  phone              String
+  whatsapp           String?
+  email              String?
+  address            String
+  city               String
+  state              String
+  pincode            String
+  paymentTerms       String                       @default("NET_30")
+  leadTimeDays       Int                          @default(3)
+  createdAt          DateTime                     @default(now())
+  updatedAt          DateTime                     @updatedAt
+
+  rawMaterials       RawMaterial[]
+  purchaseOrders     PurchaseOrder[]
+  rmPurchaseRequests RawMaterialPurchaseRequest[]
+}
+
+model ProductCategory {
+  id          String    @id @default(uuid())
+  name        String    @unique
+  description String?
+  products    Product[]
+}
+
+model Product {
+  id                       String               @id @default(uuid())
+  sku                      String               @unique
+  name                     String
+  categoryId               String
+  productType              String               @default("FINISHED_GOODS")
+  description              String?
+  unit                     String               @default("BOTTLE") // BOTTLE, PACK, BOX, BAR, KG, GM
+  packSize                 String               @default("100g")
+  mrp                      Float
+  b2bPrice                 Float
+  b2cPrice                 Float
+  distributorPrice         Float
+  gstRate                  Float                @default(12.0)
+  hsnCode                  String               @default("30049011")
+  shelfLifeMonths          Int                  @default(24)
+  minStock                 Float                @default(50)
+  maxStock                 Float                @default(1000)
+  reorderLevel             Float                @default(100)
+  isActive                 Boolean              @default(true)
+  imageUrl                 String?
+  barcode                  String?
+  batchRequirement         Boolean              @default(true)
+  manufacturingRequirement Boolean              @default(true)
+  createdAt                DateTime             @default(now())
+  updatedAt                DateTime             @updatedAt
+
+  category                 ProductCategory      @relation(fields: [categoryId], references: [id])
+  boms                     ProductBOM[]
+  productionRequests       ProductionRequest[]
+  productionOrders         ProductionOrder[]
+  productionBatches        ProductionBatch[]
+  salesOrderItems          SalesOrderItem[]
+  invoiceItems             SalesInvoiceItem[]
+}
+
+model RawMaterialCategory {
+  id           String        @id @default(uuid())
+  name         String        @unique // Herbs & Powders, Extracts & Base Oils, Packaging Materials, etc.
+  description  String?
+  materials    RawMaterial[]
+}
+
+model RawMaterial {
+  id              String                           @id @default(uuid())
+  sku             String                           @unique
+  name            String
+  categoryId      String
+  unit            String                           // KG, GM, LTR, ML, PCS
+  supplierId      String?
+  currentStock    Float                            @default(0)
+  reservedStock   Float                            @default(0)
+  minStock        Float                            @default(10)
+  reorderLevel    Float                            @default(25)
+  maxStock        Float                            @default(500)
+  purchasePrice   Float
+  gstRate         Float                            @default(18.0)
+  storageLocation String                           @default("MAIN_STORE")
+  qualityStatus   String                           @default("PASSED")
+  createdAt       DateTime                         @default(now())
+  updatedAt       DateTime                         @updatedAt
+
+  category        RawMaterialCategory              @relation(fields: [categoryId], references: [id])
+  supplier        Supplier?                        @relation(fields: [supplierId], references: [id])
+  bomItems        BOMItem[]
+  poItems         PurchaseOrderItem[]
+  rmReqItems      RawMaterialPurchaseRequestItem[]
+  consumedMats    ProductionMaterial[]
+  wastes          ProductionWaste[]
+  materialCheckItems MaterialCheckRequestItem[]
+}
+
+model ProductBOM {
+  id                 String              @id @default(uuid())
+  productId          String
+  version            String              @default("v1.0")
+  effectiveDate      DateTime            @default(now())
+  expectedYield      Float               @default(100) // Yield quantity in Product units
+  expectedWastage    Float               @default(3.0) // Allowed wastage %
+  processSteps       String?             // Text of steps (Cleaning, Grinding, Mixing, etc.)
+  qualitySpecs       String?
+  isActive           Boolean             @default(true)
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+
+  product            Product             @relation(fields: [productId], references: [id])
+  bomItems           BOMItem[]
+  productionRequests ProductionRequest[]
+  productionOrders   ProductionOrder[]
+
+  @@unique([productId, version])
+}
+
+model BOMItem {
+  id            String      @id @default(uuid())
+  bomId         String
+  rawMaterialId String
+  quantity      Float       // Quantity needed per BOM yield
+  unit          String
+  itemType      String      @default("RAW_MATERIAL") // RAW_MATERIAL, PACKAGING
+
+  bom           ProductBOM  @relation(fields: [bomId], references: [id], onDelete: Cascade)
+  rawMaterial   RawMaterial @relation(fields: [rawMaterialId], references: [id])
+}
+
+// Production Request created when finished stock is insufficient
+model ProductionRequest {
+  id                 String                       @id @default(uuid())
+  requestNo          String                       @unique // e.g. PR-2026-0001
+  salesOrderId       String?
+  productId          String
+  bomId              String
+  requestedQuantity  Float
+  status             String                       @default("PENDING") // PENDING, MATERIAL_CHECK, MATERIAL_SHORTAGE, READY_FOR_PRODUCTION, IN_PRODUCTION, COMPLETED, CANCELLED
+  requestedBy        String                       @default("Sales Executive")
+  notes              String?
+  createdAt          DateTime                     @default(now())
+  updatedAt          DateTime                     @updatedAt
+
+  salesOrder            SalesOrder?                  @relation(fields: [salesOrderId], references: [id])
+  product               Product                      @relation(fields: [productId], references: [id])
+  bom                   ProductBOM                   @relation(fields: [bomId], references: [id])
+  rmPurchaseRequests    RawMaterialPurchaseRequest[]
+  productionOrders      ProductionOrder[]
+  materialCheckRequests MaterialCheckRequest[]
+}
+
+model MaterialCheckRequest {
+  id                  String                       @id @default(uuid())
+  requestNo           String                       @unique // e.g. MCR-2026-0042
+  productionRequestId String?
+  salesOrderId        String?
+  productionOrderId   String?
+  requestedBy         String                       @default("Production Supervisor")
+  status              String                       @default("PENDING") // PENDING, MATERIALS_AVAILABLE, NOT_REQUIRED, MATERIAL_SHORTAGE, PURCHASE_REQUIRED
+  remarks             String?
+  createdAt           DateTime                     @default(now())
+  updatedAt           DateTime                     @updatedAt
+
+  productionRequest   ProductionRequest?           @relation(fields: [productionRequestId], references: [id])
+  salesOrder          SalesOrder?                  @relation(fields: [salesOrderId], references: [id])
+  productionOrder     ProductionOrder?             @relation(fields: [productionOrderId], references: [id])
+  items               MaterialCheckRequestItem[]
+}
+
+model MaterialCheckRequestItem {
+  id                String               @id @default(uuid())
+  requestId         String
+  rawMaterialId     String
+  rawMaterialName   String
+  requiredQuantity  Float
+  availableQuantity Float
+  shortageQuantity  Float                @default(0)
+  unit              String
+  status            String               @default("AVAILABLE") // AVAILABLE, SHORTAGE, NOT_REQUIRED
+
+  request           MaterialCheckRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  rawMaterial       RawMaterial          @relation(fields: [rawMaterialId], references: [id])
+}
+
+// Raw Material Purchase Request initiated by Sales / Stock Manager
+model RawMaterialPurchaseRequest {
+  id                  String                           @id @default(uuid())
+  requestNo           String                           @unique // e.g. RM-REQ-2026-0042
+  salesOrderId        String?
+  productionRequestId String?
+  supplierId          String?
+  requestedById       String
+  approvedById        String?
+  priority            String                           @default("HIGH") // LOW, MEDIUM, HIGH, URGENT
+  requiredDate        DateTime
+  estimatedCost       Float                            @default(0)
+  reason              String?
+  status              String                           @default("SUBMITTED") // DRAFT, SUBMITTED, UNDER_REVIEW, APPROVED, REJECTED, ORDERED, PARTIALLY_RECEIVED, RECEIVED, CANCELLED
+  createdAt           DateTime                         @default(now())
+  updatedAt           DateTime                         @updatedAt
+
+  salesOrder          SalesOrder?                      @relation(fields: [salesOrderId], references: [id])
+  productionRequest   ProductionRequest?               @relation(fields: [productionRequestId], references: [id])
+  supplier            Supplier?                        @relation(fields: [supplierId], references: [id])
+  requestedBy         User                             @relation("RequestedBySales", fields: [requestedById], references: [id])
+  approvedBy          User?                            @relation("ApprovedByAdmin", fields: [approvedById], references: [id])
+  items               RawMaterialPurchaseRequestItem[]
+  purchaseOrders      PurchaseOrder[]
+}
+
+model RawMaterialPurchaseRequestItem {
+  id                  String                     @id @default(uuid())
+  requestId           String
+  rawMaterialId       String
+  requiredQuantity    Float
+  availableQuantity   Float
+  shortageQuantity    Float
+  unit                String
+  estimatedRate       Float                      @default(0)
+  totalCost           Float                      @default(0)
+
+  request             RawMaterialPurchaseRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  rawMaterial         RawMaterial                @relation(fields: [rawMaterialId], references: [id])
+}
+
+model PurchaseOrder {
+  id                   String                      @id @default(uuid())
+  poNumber             String                      @unique // e.g. PO-2026-0088
+  supplierId           String
+  rmPurchaseRequestId  String?
+  salesOrderId         String?
+  status               String                      @default("DRAFT") // DRAFT, SENT, PARTIALLY_RECEIVED, RECEIVED, CANCELLED
+  expectedDelivery     DateTime
+  subtotal             Float
+  taxAmount            Float
+  totalAmount          Float
+  paymentTerms         String                      @default("NET_30")
+  shippingAddress      String                      @default("Plot No. 42, Ayurvedic Industrial Zone, Rajkot, Gujarat")
+  notes                String?
+  createdAt            DateTime                    @default(now())
+  updatedAt            DateTime                    @updatedAt
+
+  supplier             Supplier                    @relation(fields: [supplierId], references: [id])
+  rmPurchaseRequest    RawMaterialPurchaseRequest? @relation(fields: [rmPurchaseRequestId], references: [id])
+  salesOrder           SalesOrder?                 @relation(fields: [salesOrderId], references: [id])
+  items                PurchaseOrderItem[]
+  receipts             GoodsReceipt[]
+}
+
+model PurchaseOrderItem {
+  id            String        @id @default(uuid())
+  poId          String
+  rawMaterialId String
+  quantity      Float
+  rate          Float
+  gstRate       Float
+  totalAmount   Float
+
+  po            PurchaseOrder @relation(fields: [poId], references: [id], onDelete: Cascade)
+  rawMaterial   RawMaterial   @relation(fields: [rawMaterialId], references: [id])
+}
+
+model GoodsReceipt {
+  id               String        @id @default(uuid())
+  grnNumber        String        @unique // e.g. GRN-2026-0012
+  poId             String
+  receivedDate     DateTime      @default(now())
+  invoiceNumber    String
+  invoiceDate      DateTime
+  batchNumber      String
+  quantityReceived Float
+  rejectedQuantity Float         @default(0)
+  acceptedQuantity Float
+  qualityStatus    String        @default("PASSED")
+  notes            String?
+
+  po               PurchaseOrder @relation(fields: [poId], references: [id])
+}
+
+model InventoryTransaction {
+  id            String   @id @default(uuid())
+  transactionId String   @unique
+  itemType      String   // RAW_MATERIAL, FINISHED_PRODUCT
+  itemId        String   // rawMaterialId or productId
+  itemName      String
+  batchNumber   String?
+  quantity      Float
+  unit          String
+  direction     String   // IN, OUT
+  type          String   // PURCHASE_RECEIPT, RAW_MATERIAL_ISSUE, PRODUCTION_CONSUMPTION, PRODUCTION_OUTPUT, WASTAGE, SALES_DISPATCH, SALES_RETURN, STOCK_ADJUSTMENT, DAMAGE
+  referenceType String?  // ProductionOrder, SalesOrder, GoodsReceipt, PurchaseOrder
+  referenceId   String?
+  performedBy   String?
+  timestamp     DateTime @default(now())
+}
+
+model StockBalance {
+  id            String   @id @default(uuid())
+  itemType      String   // RAW_MATERIAL, FINISHED_PRODUCT
+  itemId        String   @unique
+  batchNumber   String?
+  quantity      Float    @default(0)
+  reservedQuantity Float @default(0)
+  unit          String
+  updatedAt     DateTime @updatedAt
+}
+
+model SalesOrder {
+  id                   String                       @id @default(uuid())
+  orderNumber          String                       @unique // e.g. SO-1024
+  customerId           String
+  salespersonId        String?
+  orderDate            DateTime                     @default(now())
+  expectedDispatchDate DateTime?
+  status               String                       @default("CONFIRMED") // DRAFT, CONFIRMED, STOCK_CHECK, PRODUCTION_REQUIRED, MATERIAL_REQUIRED, MATERIAL_ORDERED, PRODUCTION, READY_FOR_DISPATCH, DISPATCHED, DELIVERED, CANCELLED, RETURNED
+  subtotal             Float
+  taxAmount            Float
+  discount             Float                        @default(0)
+  totalAmount          Float
+  paymentStatus        String                       @default("UNPAID") // UNPAID, PARTIAL, PAID
+  deliveryAddress      String
+  notes                String?
+  createdAt            DateTime                     @default(now())
+  updatedAt            DateTime                     @updatedAt
+
+  customer             Customer                     @relation(fields: [customerId], references: [id])
+  salesperson          User?                        @relation("SalespersonOrders", fields: [salespersonId], references: [id])
+  items                SalesOrderItem[]
+  invoices             SalesInvoice[]
+  dispatches           Dispatch[]
+  productionRequests   ProductionRequest[]
+  rmPurchaseRequests   RawMaterialPurchaseRequest[]
+  purchaseOrders       PurchaseOrder[]
+  materialCheckRequests MaterialCheckRequest[]
+}
+
+model SalesOrderItem {
+  id          String     @id @default(uuid())
+  orderId     String
+  productId   String
+  batchNumber String?
+  quantity    Float
+  unitPrice   Float
+  discount    Float      @default(0)
+  gstRate     Float
+  totalAmount Float
+
+  order       SalesOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product     Product    @relation(fields: [productId], references: [id])
+}
+
+model SalesInvoice {
+  id            String             @id @default(uuid())
+  invoiceNumber String             @unique // e.g. INV-2026-0042
+  salesOrderId  String
+  customerId    String
+  invoiceDate   DateTime           @default(now())
+  dueDate       DateTime
+  subtotal      Float
+  taxAmount     Float
+  cgstAmount    Float              @default(0)
+  sgstAmount    Float              @default(0)
+  igstAmount    Float              @default(0)
+  discount      Float              @default(0)
+  totalAmount   Float
+  paidAmount    Float              @default(0)
+  balanceAmount Float
+  status        String             @default("ISSUED") // DRAFT, ISSUED, UNPAID, PARTIALLY_PAID, PAID, OVERDUE, CANCELLED
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+
+  salesOrder    SalesOrder         @relation(fields: [salesOrderId], references: [id])
+  customer      Customer           @relation(fields: [customerId], references: [id])
+  items         SalesInvoiceItem[]
+  payments      Payment[]
+}
+
+model SalesInvoiceItem {
+  id          String       @id @default(uuid())
+  invoiceId   String
+  productId   String
+  batchNumber String?
+  quantity    Float
+  unitPrice   Float
+  gstRate     Float
+  taxAmount   Float
+  totalAmount Float
+
+  invoice     SalesInvoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  product     Product      @relation(fields: [productId], references: [id])
+}
+
+model ProductionOrder {
+  id                  String               @id @default(uuid())
+  productionOrderNo  String               @unique // e.g. PO-PROD-2026-001
+  productionRequestId String?
+  productId           String
+  bomId               String
+  plannedQuantity     Float
+  targetQuantity      Float
+  startDate           DateTime
+  expectedCompletion  DateTime
+  supervisor          String
+  machine             String               @default("LINE_1")
+  status              String               @default("PLANNED") // PLANNED, MATERIAL_ISSUED, IN_PROGRESS, QUALITY_CHECK, APPROVED, REJECTED, PACKAGING, COMPLETED
+  notes               String?
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+
+  productionRequest   ProductionRequest?   @relation(fields: [productionRequestId], references: [id])
+  product             Product              @relation(fields: [productId], references: [id])
+  bom                 ProductBOM           @relation(fields: [bomId], references: [id])
+  batch               ProductionBatch?
+  consumedMaterials   ProductionMaterial[]
+  wastes              ProductionWaste[]
+  qualityChecks       QualityCheck[]
+  materialCheckRequests MaterialCheckRequest[]
+}
+
+model ProductionBatch {
+  id                String          @id @default(uuid())
+  batchNumber       String          @unique // e.g. KAY-2026-0001
+  productionOrderId String          @unique
+  productId         String
+  mfgDate           DateTime        @default(now())
+  expDate           DateTime
+  plannedQuantity   Float
+  finishedQuantity  Float           @default(0)
+  wastedQuantity    Float           @default(0)
+  qualityStatus     String          @default("PENDING") // PENDING, PASSED, REJECTED
+  packagingQuantity Float           @default(0)
+  unitCost          Float           @default(0)
+  totalCost         Float           @default(0)
+  status            String          @default("IN_PROGRESS") // IN_PROGRESS, COMPLETED, QUARANTINED
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+
+  productionOrder   ProductionOrder @relation(fields: [productionOrderId], references: [id])
+  product           Product         @relation(fields: [productId], references: [id])
+}
+
+model ProductionMaterial {
+  id                String          @id @default(uuid())
+  productionOrderId String
+  rawMaterialId     String
+  quantityConsumed  Float
+  unit              String
+  consumedAt        DateTime        @default(now())
+
+  productionOrder   ProductionOrder @relation(fields: [productionOrderId], references: [id], onDelete: Cascade)
+  rawMaterial       RawMaterial     @relation(fields: [rawMaterialId], references: [id])
+}
+
+model ProductionWaste {
+  id                String          @id @default(uuid())
+  productionOrderId String
+  stage             String          // Cleaning, Grinding, Mixing, Processing, Filling, Packaging
+  rawMaterialId     String?
+  inputQuantity     Float
+  outputQuantity    Float
+  wasteQuantity     Float
+  wastePercentage   Float
+  allowedPercentage Float           @default(3.0)
+  isAboveTolerance  Boolean         @default(false)
+  employeeName      String?
+  notes             String?
+  recordedAt        DateTime        @default(now())
+
+  productionOrder   ProductionOrder @relation(fields: [productionOrderId], references: [id], onDelete: Cascade)
+  rawMaterial       RawMaterial?    @relation(fields: [rawMaterialId], references: [id])
+}
+
+model QualityCheck {
+  id                String          @id @default(uuid())
+  productionOrderId String
+  inspectorName     String
+  checkDate         DateTime        @default(now())
+  parameterSpecs    String          // JSON: Color, pH, Moisture, Active Assay, Heavy Metals
+  result            String          // PASSED, REJECTED, CONDITIONAL
+  remarks           String?
+
+  productionOrder   ProductionOrder @relation(fields: [productionOrderId], references: [id], onDelete: Cascade)
+}
+
+model Dispatch {
+  id                   String                @id @default(uuid())
+  dispatchNo           String                @unique // e.g. DISP-2026-0012
+  salesOrderId         String
+  invoiceNumber        String?
+  truckNumber          String
+  driverName           String
+  driverPhone          String
+  transporterName      String
+  lrNumber             String?
+  ewayBillNo           String?
+  dispatchDate         DateTime              @default(now())
+  status               String                @default("READY") // READY, LOADING, LOADED, DISPATCHED, DELIVERED, FAILED
+  dispatchedById       String?
+  verifiedById         String?
+  deliveryConfirmed    Boolean               @default(false)
+  deliveryDate         DateTime?
+  customerFeedback     String?
+  createdAt            DateTime              @default(now())
+  updatedAt            DateTime              @updatedAt
+
+  salesOrder           SalesOrder            @relation(fields: [salesOrderId], references: [id])
+  dispatchedBy         User?                 @relation("DispatchedBy", fields: [dispatchedById], references: [id])
+  verifiedBy           User?                 @relation("VerifiedBy", fields: [verifiedById], references: [id])
+  items                DispatchItem[]
+  deliveryConfirmations DeliveryConfirmation[]
+}
+
+model DispatchItem {
+  id          String   @id @default(uuid())
+  dispatchId  String
+  productId   String
+  batchNumber String
+  quantity    Float
+
+  dispatch    Dispatch @relation(fields: [dispatchId], references: [id], onDelete: Cascade)
+}
+
+model DeliveryConfirmation {
+  id               String   @id @default(uuid())
+  dispatchId       String
+  receivedQuantity Float
+  damagedQuantity  Float    @default(0)
+  shortQuantity    Float    @default(0)
+  customerRemarks  String?
+  confirmedAt      DateTime @default(now())
+
+  dispatch         Dispatch @relation(fields: [dispatchId], references: [id], onDelete: Cascade)
+}
+
+model Payment {
+  id            String        @id @default(uuid())
+  paymentNo     String        @unique
+  invoiceId     String?
+  customerId    String?
+  amount        Float
+  paymentDate   DateTime      @default(now())
+  paymentMode   String        // BANK_TRANSFER, CHEQUE, UPI, CASH
+  referenceNo   String?
+  notes         String?
+  createdAt     DateTime      @default(now())
+
+  invoice       SalesInvoice? @relation(fields: [invoiceId], references: [id])
+  customer      Customer?     @relation(fields: [customerId], references: [id])
+}
+
+model Expense {
+  id          String   @id @default(uuid())
+  expenseNo   String   @unique
+  category    String   // UTILITIES, SALARIES, MAINTENANCE, LOGISTICS, PACKAGING, TAXES, OTHER
+  amount      Float
+  expenseDate DateTime @default(now())
+  vendorName  String?
+  description String
+  paidVia     String   @default("BANK_TRANSFER")
+  receiptUrl  String?
+  createdAt   DateTime @default(now())
+}
+
+model AccountingEntry {
+  id          String   @id @default(uuid())
+  entryNo     String   @unique
+  date        DateTime @default(now())
+  type        String   // REVENUE, PURCHASE, EXPENSE, TAX, ADJUSTMENT
+  accountName String   // Sales Account, RM Purchase, Electricity, GST Payable
+  debit       Float    @default(0)
+  credit      Float    @default(0)
+  referenceNo String?
+  description String
+  createdAt   DateTime @default(now())
+}
+
+model GSTRecord {
+  id               String   @id @default(uuid())
+  period           String   // e.g. 2026-09
+  recordType       String   // GSTR1, GSTR3B, GSTR2B
+  taxableSales     Float    @default(0)
+  taxablePurchases Float    @default(0)
+  cgstAmount       Float    @default(0)
+  sgstAmount       Float    @default(0)
+  igstAmount       Float    @default(0)
+  totalTax         Float    @default(0)
+  createdAt        DateTime @default(now())
+}
+
+model Notification {
+  id              String    @id @default(uuid())
+  recipientUserId String?
+  recipientRole   String?   // SUPER_ADMIN, SALES, STOCK_MANAGER, ACCOUNTANT, PRODUCTION
+  type            String    // SALES_ORDER_CREATED, PRODUCTION_REQUEST_CREATED, MATERIAL_CHECK_REQUIRED, MATERIALS_AVAILABLE, MATERIAL_NOT_REQUIRED, MATERIAL_SHORTAGE, PURCHASE_REQUIRED, PRODUCTION_STARTED, PRODUCTION_STAGE_COMPLETED, PRODUCTION_COMPLETED, QC_REQUIRED, QC_APPROVED, DISPATCH_REQUIRED, ORDER_DISPATCHED, DELIVERY_CONFIRMATION_REQUIRED, ORDER_DELIVERED, ACCOUNTING_REQUIRED, CA_PACKAGE_READY, CA_PACKAGE_SENT, SYSTEM_ALERT
+  title           String
+  message         String
+  entityType      String?
+  entityId        String?
+  priority        String    @default("NORMAL") // LOW, NORMAL, HIGH, URGENT
+  isRead          Boolean   @default(false)
+  readAt          DateTime?
+  metadata        String?
+  createdAt       DateTime  @default(now())
+}
+
+model TaskAssignment {
+  id               String    @id @default(uuid())
+  taskType         String
+  entityType       String
+  entityId         String
+  assignedToRole   String?
+  assignedToUserId String?
+  assignedBy       String?
+  priority         String    @default("NORMAL") // LOW, NORMAL, HIGH, URGENT
+  status           String    @default("PENDING") // PENDING, IN_PROGRESS, COMPLETED, CANCELLED
+  dueDate          DateTime?
+  createdAt        DateTime  @default(now())
+  completedAt      DateTime?
+}
+
+model CAExport {
+  id            String         @id @default(uuid())
+  exportNo      String         @unique
+  period        String         // e.g. Sep 2026
+  generatedBy   String
+  status        String         @default("GENERATED") // GENERATED, SENDING, DELIVERED, FAILED
+  whatsappMsgId String?
+  errorMessage  String?
+  generatedAt   DateTime       @default(now())
+
+  exporter      User           @relation("CAExporter", fields: [generatedBy], references: [id])
+  files         CAExportFile[]
+}
+
+model CAExportFile {
+  id         String   @id @default(uuid())
+  exportId   String
+  fileName   String
+  fileType   String   // EXCEL, PDF
+  fileUrl    String
+  fileSizeKb Float
+
+  caExport   CAExport @relation(fields: [exportId], references: [id], onDelete: Cascade)
+}
+
+model WhatsAppMessage {
+  id           String   @id @default(uuid())
+  messageId    String   @unique
+  recipient    String
+  templateName String?
+  status       String   @default("SENT") // SENT, DELIVERED, READ, FAILED
+  payload      String?  // JSON string
+  sentAt       DateTime @default(now())
+}
+
+model CompanySetting {
+  id          String   @id @default(uuid())
+  companyName String   @default("Ghanshyam Ayurvedic Pharmacy")
+  gstin       String   @default("24AAAAG1234H1Z5")
+  pan         String   @default("AAAAG1234H")
+  phone       String   @default("+91 98765 43210")
+  email       String   @default("info@ghanshyamayurvedic.com")
+  caName      String   @default("S. K. Mehta & Co. (CA)")
+  caPhone     String   @default("+91 98765 99999")
+  address     String   @default("Plot No. 42, Ayurvedic Industrial Zone, Rajkot, Gujarat - 360002")
+  updatedAt   DateTime @updatedAt
+}
