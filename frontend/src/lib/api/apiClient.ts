@@ -1,9 +1,18 @@
 import axios from 'axios';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+const getBaseUrl = () => {
+  if (typeof window !== 'undefined') {
+    const customUrl = process.env.NEXT_PUBLIC_API_URL;
+    if (customUrl && !customUrl.includes('localhost')) {
+      return customUrl;
+    }
+    return ''; // Relative path -> Proxied via Next.js rewrite rule to NestJS backend
+  }
+  return process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+};
 
 export const apiClient = axios.create({
-  baseURL: API_BASE_URL,
+  baseURL: getBaseUrl(),
   headers: {
     'Content-Type': 'application/json',
   },
