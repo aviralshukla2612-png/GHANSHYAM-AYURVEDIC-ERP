@@ -12,11 +12,9 @@ cd /app/backend
 echo "📦 Running Prisma DB push..."
 npx prisma db push --skip-generate
 
-# Seed DB if dev.db does not exist yet
-if [ ! -f "/app/backend/prisma/dev.db" ]; then
-    echo "🌱 Initializing database with seed data..."
-    npm run prisma:seed || true
-fi
+# Always ensure initial seed data (roles, users, products, formulations) is applied
+echo "🌱 Running Prisma Database Seed..."
+npm run prisma:seed || true
 
 # Start NestJS backend in background
 echo "⚡ Starting NestJS Backend Server on port 5000..."
