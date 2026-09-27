@@ -11,13 +11,13 @@ export DATABASE_URL="${DATABASE_URL:-file:/app/data/dev.db}"
 # Navigate to backend directory
 cd /app/backend
 
-# Ensure Prisma Database schema is applied
+# Ensure Prisma Database schema is applied (non-interactive)
 echo "📦 Running Prisma DB push ($DATABASE_URL)..."
-npx prisma db push --skip-generate
+npx prisma db push --accept-data-loss --skip-generate
 
-# Always ensure initial seed data (roles, users, products, formulations) is applied
+# Ensure initial seed data is applied without blocking server launch
 echo "🌱 Running Prisma Database Seed..."
-npm run prisma:seed
+npm run prisma:seed || true
 
 # Start NestJS backend in background
 echo "⚡ Starting NestJS Backend Server on port 5000..."
