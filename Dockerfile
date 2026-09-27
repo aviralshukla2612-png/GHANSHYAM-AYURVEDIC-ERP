@@ -39,6 +39,7 @@ WORKDIR /app
 
 # Install required system packages
 RUN apk add --no-cache bash openssl sqlite
+RUN mkdir -p /app/data
 
 ENV NODE_ENV=production
 ENV PORT=5000

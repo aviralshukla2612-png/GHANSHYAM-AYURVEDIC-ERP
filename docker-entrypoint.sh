@@ -5,16 +5,19 @@ echo "======================================================="
 echo "🚀 Starting Ghanshyam Ayurvedic ERP Application"
 echo "======================================================="
 
+mkdir -p /app/data
+export DATABASE_URL="${DATABASE_URL:-file:/app/data/dev.db}"
+
 # Navigate to backend directory
 cd /app/backend
 
 # Ensure Prisma Database schema is applied
-echo "📦 Running Prisma DB push..."
+echo "📦 Running Prisma DB push ($DATABASE_URL)..."
 npx prisma db push --skip-generate
 
 # Always ensure initial seed data (roles, users, products, formulations) is applied
 echo "🌱 Running Prisma Database Seed..."
-npm run prisma:seed || true
+npm run prisma:seed
 
 # Start NestJS backend in background
 echo "⚡ Starting NestJS Backend Server on port 5000..."
