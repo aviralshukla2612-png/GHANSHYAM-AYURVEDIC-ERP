@@ -5,9 +5,14 @@ echo "======================================================="
 echo "🚀 Starting Ghanshyam Ayurvedic ERP Application"
 echo "======================================================="
 
+# Ensure persistent data directory exists
+mkdir -p /app/data
+
+# Use DATABASE_URL from environment or default to /app/data/dev.db
+export DATABASE_URL="${DATABASE_URL:-file:/app/data/dev.db}"
+
 # Navigate to backend directory
 cd /app/backend
-export DATABASE_URL="file:./dev.db"
 
 # Ensure Prisma Database schema is applied (non-interactive)
 echo "📦 Running Prisma DB push ($DATABASE_URL)..."
@@ -17,7 +22,7 @@ npx prisma db push --accept-data-loss --skip-generate
 echo "🌱 Running Prisma Database Seed..."
 if [ -f "dist/prisma/seed.js" ]; then
   node dist/prisma/seed.js || true
-else
+elif [ -f "prisma/seed.ts" ]; then
   npx ts-node prisma/seed.ts || true
 fi
 
