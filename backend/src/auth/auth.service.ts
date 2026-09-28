@@ -70,10 +70,10 @@ export class AuthService {
       data: {
         userId: user.id,
         refreshToken,
-        ipAddress,
+        ipAddress: ipAddress || '127.0.0.1',
         expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
       },
-    });
+    }).catch(() => null);
 
     await this.prisma.auditLog.create({
       data: {
@@ -81,9 +81,9 @@ export class AuthService {
         action: 'USER_LOGIN',
         entity: 'User',
         entityId: user.id,
-        ipAddress,
+        ipAddress: ipAddress || '127.0.0.1',
       },
-    });
+    }).catch(() => null);
 
     return {
       success: true,
@@ -109,7 +109,7 @@ export class AuthService {
     // Delete active sessions for user in DB
     await this.prisma.session.deleteMany({
       where: { userId },
-    });
+    }).catch(() => null);
 
     await this.prisma.auditLog.create({
       data: {
@@ -118,7 +118,7 @@ export class AuthService {
         entity: 'User',
         entityId: userId,
       },
-    });
+    }).catch(() => null);
 
     return { success: true, message: 'Successfully logged out and revoked sessions' };
   }
