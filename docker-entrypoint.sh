@@ -5,11 +5,9 @@ echo "======================================================="
 echo "🚀 Starting Ghanshyam Ayurvedic ERP Application"
 echo "======================================================="
 
-mkdir -p /app/data
-export DATABASE_URL="${DATABASE_URL:-file:/app/data/dev.db}"
-
 # Navigate to backend directory
 cd /app/backend
+export DATABASE_URL="file:./dev.db"
 
 # Ensure Prisma Database schema is applied (non-interactive)
 echo "📦 Running Prisma DB push ($DATABASE_URL)..."
