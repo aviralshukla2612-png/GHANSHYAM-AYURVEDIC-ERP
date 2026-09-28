@@ -91,6 +91,7 @@ export default function Sidebar() {
         { label: 'Stock & Inventory', href: '/dashboard/stock', icon: Boxes, roles: ['SUPER_ADMIN', 'STOCK_MANAGER'] },
         { label: 'Production & Batches', href: '/dashboard/production', icon: Factory, roles: ['SUPER_ADMIN', 'PRODUCTION'] },
         { label: 'Accounting & GST', href: '/dashboard/accounting', icon: Calculator, roles: ['SUPER_ADMIN', 'ACCOUNTANT'] },
+        { label: 'GSTR-1 Outward Return', href: '/dashboard/accounting/gstr1', icon: FileCheck, roles: ['SUPER_ADMIN', 'ACCOUNTANT'] },
         { label: 'CA WhatsApp Export', href: '/dashboard/ca-export', icon: Send, roles: ['SUPER_ADMIN', 'ACCOUNTANT'] },
         { label: 'Products Master', href: '/dashboard/products', icon: PackageCheck, roles: ['SUPER_ADMIN', 'PRODUCTION', 'STOCK_MANAGER', 'SALES'] },
         { label: 'Admin & Audit Logs', href: '/dashboard/admin', icon: ShieldAlert, roles: ['SUPER_ADMIN'] },
