@@ -6,6 +6,15 @@ import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 import * as cookieParser from 'cookie-parser';
 
 async function bootstrap() {
+  if (process.env.NODE_ENV === 'staging' || process.env.NODE_ENV === 'production') {
+    const url = process.env.DATABASE_URL ?? '';
+    if (!url || (!url.startsWith('postgresql://') && !url.startsWith('postgres://'))) {
+      throw new Error(
+        'FAIL FAST: DATABASE_URL must explicitly start with postgresql:// or postgres:// in staging/production!'
+      );
+    }
+  }
+
   const app = await NestFactory.create(AppModule);
 
   const allowedOrigins = process.env.CORS_ORIGIN
