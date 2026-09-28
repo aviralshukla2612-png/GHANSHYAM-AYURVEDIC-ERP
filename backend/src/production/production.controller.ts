@@ -17,6 +17,11 @@ export class ProductionController {
     return this.productionService.getRequests();
   }
 
+  @Post('requests')
+  async createProductionRequest(@Body() data: any) {
+    return this.productionService.createProductionRequest(data);
+  }
+
   @Get('batches')
   async getBatches() {
     return this.productionService.getBatches();

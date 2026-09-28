@@ -18,8 +18,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-ayurveda-950 text-white">
-        <div className="w-12 h-12 border-4 border-gold-400 border-t-transparent rounded-full animate-spin"></div>
+      <div className="flex items-center justify-center min-h-screen bg-cream-50 text-espresso-900">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-10 h-10 border-3 border-wine-600 border-t-transparent rounded-full animate-spin"></div>
+          <span className="text-xs font-semibold text-espresso-600 tracking-wider uppercase">Loading Ghanshyam ERP...</span>
+        </div>
       </div>
     );
   }
@@ -27,11 +30,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   if (!user) return null;
 
   return (
-    <div className="flex h-screen bg-gray-50 overflow-hidden">
+    <div className="flex h-screen bg-[#FAF8F5] overflow-hidden antialiased">
       <Sidebar />
       <div className="flex-1 flex flex-col min-w-0 h-screen overflow-hidden">
         <Navbar />
-        <main className="flex-1 p-6 overflow-y-auto">{children}</main>
+        <main className="flex-1 p-6 md:p-8 overflow-y-auto bg-[#FAF8F5]">{children}</main>
       </div>
     </div>
   );

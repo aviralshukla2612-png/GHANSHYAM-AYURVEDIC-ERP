@@ -12,6 +12,11 @@ export class PurchasesController {
     return this.purchasesService.findAll();
   }
 
+  @Get('bills')
+  async getPurchaseBills() {
+    return this.purchasesService.getPurchaseBills();
+  }
+
   @Get(':id')
   async findOne(@Param('id') id: string) {
     return this.purchasesService.findOne(id);

@@ -13,6 +13,12 @@ export class NotificationsController {
     return this.notificationsService.findAll(role);
   }
 
+  @Patch('read-all')
+  async markAllAsRead(@Req() req: any) {
+    const role = req.user?.roles?.[0];
+    return this.notificationsService.markAllAsRead(role);
+  }
+
   @Patch(':id/read')
   async markAsRead(@Param('id') id: string) {
     return this.notificationsService.markAsRead(id);

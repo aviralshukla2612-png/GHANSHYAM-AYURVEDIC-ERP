@@ -25,6 +25,11 @@ export class RawMaterialRequestsController {
     });
   }
 
+  @Post(':id/request-sales-payment')
+  async requestSalesPayment(@Param('id') id: string, @Req() req: any) {
+    return this.rmRequestsService.forwardToSalesForPayment(id, req.user);
+  }
+
   @Post(':id/convert-po')
   async convertToPO(@Param('id') id: string, @Req() req: any) {
     return this.rmRequestsService.convertToPurchaseOrder(id, req.user);

@@ -106,21 +106,87 @@ export class RawMaterialRequestsService {
       },
     });
 
+    // Notify Sales Executive
+    await this.prisma.notification.create({
+      data: {
+        type: 'RM_REQUEST_CREATED',
+        title: `🛒 RAW MATERIAL PROCUREMENT REQUIRED: ${requestNo}`,
+        message: `Production shortage detected. Sales Executive can review and issue Purchase Order to herbal supplier.`,
+        recipientRole: 'SALES',
+        priority: 'HIGH',
+      },
+    });
+
+    // Notify Stock Manager
+    await this.prisma.notification.create({
+      data: {
+        type: 'RM_REQUEST_CREATED',
+        title: `📦 RM PROCUREMENT REQUEST: ${requestNo}`,
+        message: `Material shortage requisition ${requestNo} requires Purchase Order creation.`,
+        recipientRole: 'STOCK_MANAGER',
+        priority: 'HIGH',
+      },
+    });
+
     return { success: true, message: 'Raw Material Purchase Request submitted', data: request };
   }
 
+  async forwardToSalesForPayment(id: string, user: any) {
+    const request = await this.prisma.rawMaterialPurchaseRequest.findUnique({
+      where: { id },
+      include: { items: { include: { rawMaterial: true } }, supplier: true },
+    });
+
+    if (!request) throw new NotFoundException('RM Request not found');
+
+    const updated = await this.prisma.rawMaterialPurchaseRequest.update({
+      where: { id },
+      data: { status: 'PENDING_SALES_PAYMENT' },
+    });
+
+    await this.prisma.notification.create({
+      data: {
+        type: 'RM_REQUEST_CREATED',
+        title: `💳 PAYMENT APPROVAL REQUIRED: ${request.requestNo}`,
+        message: `Stock Manager forwarded RM requisition ${request.requestNo} (₹${request.estimatedCost || 1200}) for Sales Executive payment & PO issuance.`,
+        recipientRole: 'SALES',
+        priority: 'HIGH',
+      },
+    });
+
+    return {
+      success: true,
+      message: `Payment request for ${request.requestNo} sent to Sales Executive! Sales person will execute payment.`,
+      data: updated,
+    };
+  }
+
   async convertToPurchaseOrder(id: string, user: any) {
-    if (!user.permissions.includes('raw_material.purchase_order.create') && !user.roles.includes('SUPER_ADMIN') && !user.roles.includes('SALES')) {
-      throw new ForbiddenException('User lacks permission: raw_material.purchase_order.create');
+    if (
+      !user.roles?.includes('SALES') &&
+      !user.roles?.includes('SUPER_ADMIN')
+    ) {
+      throw new ForbiddenException('Access Denied: Only Sales Executives can approve payments & issue Purchase Orders.');
     }
 
-    const request = await this.prisma.rawMaterialPurchaseRequest.findUnique({
+    let request = await this.prisma.rawMaterialPurchaseRequest.findUnique({
       where: { id },
       include: { supplier: true, items: { include: { rawMaterial: true } } },
     });
 
     if (!request) throw new NotFoundException('RM Request not found');
-    if (!request.supplierId) throw new BadRequestException('Please assign a Supplier before creating PO');
+    
+    // If supplier is not assigned, auto-assign the first available herb supplier
+    if (!request.supplierId) {
+      const defaultSupplier = await this.prisma.supplier.findFirst();
+      if (defaultSupplier) {
+        request = await this.prisma.rawMaterialPurchaseRequest.update({
+          where: { id },
+          data: { supplierId: defaultSupplier.id },
+          include: { supplier: true, items: { include: { rawMaterial: true } } },
+        });
+      }
+    }
 
     const poNo = `PO-${Date.now().toString().slice(-6)}`;
     let subtotal = 0;

@@ -64,4 +64,16 @@ export class NotificationsService {
     });
     return { success: true };
   }
+
+  async markAllAsRead(role?: string) {
+    const where: any = {};
+    if (role && role !== 'SUPER_ADMIN' && role !== 'ADMIN') {
+      where.OR = [{ recipientRole: role }, { recipientRole: null }];
+    }
+    await this.prisma.notification.updateMany({
+      where: { ...where, isRead: false },
+      data: { isRead: true },
+    });
+    return { success: true };
+  }
 }

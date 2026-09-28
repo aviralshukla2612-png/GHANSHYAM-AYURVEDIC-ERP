@@ -199,4 +199,35 @@ export class DispatchService {
       };
     });
   }
+
+  async updateDispatch(id: string, data: any) {
+    const dispatch = await this.prisma.dispatch.findUnique({ where: { id } });
+    if (!dispatch) throw new NotFoundException('Dispatch record not found');
+
+    const updated = await this.prisma.dispatch.update({
+      where: { id },
+      data: {
+        customerFeedback: data.customerFeedback !== undefined ? data.customerFeedback : dispatch.customerFeedback,
+        status: data.status || dispatch.status,
+        deliveryConfirmed: data.deliveryConfirmed !== undefined ? Boolean(data.deliveryConfirmed) : dispatch.deliveryConfirmed,
+        deliveryDate: data.deliveryDate ? new Date(data.deliveryDate) : dispatch.deliveryDate,
+        truckNumber: data.truckNumber || dispatch.truckNumber,
+        driverName: data.driverName || dispatch.driverName,
+        driverPhone: data.driverPhone || dispatch.driverPhone,
+        transporterName: data.transporterName || dispatch.transporterName,
+        lrNumber: data.lrNumber || dispatch.lrNumber,
+        ewayBillNo: data.ewayBillNo || dispatch.ewayBillNo,
+      },
+      include: {
+        salesOrder: { include: { customer: true } },
+        items: true,
+      },
+    });
+
+    return {
+      success: true,
+      message: 'Dispatch record updated successfully',
+      data: updated,
+    };
+  }
 }

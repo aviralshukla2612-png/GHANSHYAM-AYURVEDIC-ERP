@@ -15,7 +15,7 @@ import {
   PackageCheck,
   Send,
   ShieldAlert,
-  Leaf,
+  Sparkles,
   LogOut,
   ChevronRight,
   ClipboardList,
@@ -62,11 +62,12 @@ export default function Sidebar() {
       ],
     },
     {
-      title: 'PROCUREMENT (SALES INITIATED)',
+      title: 'PROCUREMENT & BILLS',
       items: [
-        { label: 'Raw Material Requests', href: '/dashboard/sales/raw-material-requests', icon: Layers, roles: ['SUPER_ADMIN', 'SALES', 'STOCK_MANAGER'] },
-        { label: 'Purchase Orders', href: '/dashboard/sales/purchase-orders', icon: ClipboardList, roles: ['SUPER_ADMIN', 'SALES', 'STOCK_MANAGER'] },
-        { label: 'Purchase Tracking', href: '/dashboard/sales/purchase-tracking', icon: PackageSearch, roles: ['SUPER_ADMIN', 'SALES', 'STOCK_MANAGER'] },
+        { label: 'Raw Material Bills', href: '/dashboard/sales/raw-material-bills', icon: FileCheck, roles: ['SUPER_ADMIN', 'SALES', 'ACCOUNTANT'] },
+        { label: 'Raw Material Requests', href: '/dashboard/sales/raw-material-requests', icon: Layers, roles: ['SUPER_ADMIN', 'SALES'] },
+        { label: 'Purchase Orders', href: '/dashboard/sales/purchase-orders', icon: ClipboardList, roles: ['SUPER_ADMIN', 'SALES', 'ACCOUNTANT'] },
+        { label: 'Purchase Tracking', href: '/dashboard/sales/purchase-tracking', icon: PackageSearch, roles: ['SUPER_ADMIN', 'SALES'] },
       ],
     },
     {
@@ -98,24 +99,24 @@ export default function Sidebar() {
   ];
 
   return (
-    <aside className="w-64 bg-ayurveda-950 text-white h-screen sticky top-0 flex flex-col border-r border-ayurveda-800 shadow-xl shrink-0 overflow-hidden select-none">
+    <aside className="w-64 bg-[#F7F4EE] text-[#1A1817] h-screen sticky top-0 flex flex-col border-r border-[#EAE5DC] shadow-[1px_0_4px_rgba(0,0,0,0.02)] shrink-0 overflow-hidden select-none">
       {/* Brand Header */}
-      <div className="p-4 border-b border-ayurveda-800 flex items-center gap-3 shrink-0">
-        <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-gold-500 to-amber-300 flex items-center justify-center shadow-lg shadow-gold-500/20">
-          <Leaf className="w-5 h-5 text-ayurveda-950" />
+      <div className="p-4 border-b border-[#EAE5DC] flex items-center gap-3 shrink-0 bg-[#F2EEE7]/80">
+        <div className="w-9 h-9 rounded-xl bg-[#1A1817] flex items-center justify-center shadow-xs">
+          <Sparkles className="w-4 h-4 text-[#B8944D]" />
         </div>
         <div>
-          <h2 className="font-extrabold text-sm tracking-wide text-white">GHANSHYAM</h2>
-          <p className="text-[10px] text-gold-400 font-medium tracking-wider">AYURVEDIC ERP</p>
+          <h2 className="font-bold text-xs tracking-wider text-[#1A1817] font-mono">GHANSHYAM</h2>
+          <p className="text-[10px] text-[#5C1D24] font-semibold tracking-widest uppercase">AYURVEDIC ERP</p>
         </div>
       </div>
 
-      {/* User Badge */}
+      {/* User Profile Badge */}
       {user && (
-        <div className="mx-3 my-3 p-2.5 rounded-xl bg-ayurveda-900 border border-ayurveda-800 flex items-center justify-between shrink-0">
+        <div className="mx-3 my-3 p-3 rounded-xl bg-white border border-[#EAE5DC] shadow-[0_1px_2px_rgba(0,0,0,0.03)] flex items-center justify-between shrink-0">
           <div className="overflow-hidden">
-            <p className="text-xs font-bold text-white truncate">{user.name}</p>
-            <span className="text-[10px] px-2 py-0.5 rounded-full bg-gold-500/20 text-gold-300 font-medium inline-block mt-0.5">
+            <p className="text-xs font-bold text-[#1A1817] truncate">{user.name}</p>
+            <span className="text-[10px] px-2 py-0.5 rounded-md bg-[#FDF2F4] text-[#6B1D2F] border border-[#F7D2D9] font-bold inline-block mt-0.5 font-mono">
               {user.roles[0]}
             </span>
           </div>
@@ -126,7 +127,7 @@ export default function Sidebar() {
       <nav
         ref={navRef}
         onScroll={handleNavScroll}
-        className="flex-1 px-3 py-2 space-y-4 overflow-y-auto scrollbar-thin scrollbar-thumb-ayurveda-800 scrollbar-track-transparent"
+        className="flex-1 px-3 py-2 space-y-4 overflow-y-auto scrollbar-thin"
       >
         {sections.map((sec, idx) => {
           const permittedItems = sec.items.filter((item) =>
@@ -136,7 +137,7 @@ export default function Sidebar() {
 
           return (
             <div key={idx} className="space-y-1">
-              <h4 className="px-3 text-[10px] font-extrabold text-ayurveda-400 tracking-wider uppercase">
+              <h4 className="px-3 text-[10px] font-bold text-[#8C857E] tracking-wider uppercase font-mono">
                 {sec.title}
               </h4>
               {permittedItems.map((item) => {
@@ -147,17 +148,17 @@ export default function Sidebar() {
                     key={item.href}
                     href={item.href}
                     scroll={false}
-                    className={`flex items-center justify-between px-3 py-2 rounded-xl text-[11px] font-semibold transition-all ${
+                    className={`flex items-center justify-between px-3 py-2 rounded-xl text-xs transition-all ${
                       isActive
-                        ? 'bg-ayurveda-600 text-white shadow-md shadow-ayurveda-600/30'
-                        : 'text-ayurveda-200 hover:bg-ayurveda-900 hover:text-white'
+                        ? 'bg-[#EDE9E0] text-[#5C1D24] font-bold shadow-xs border-l-2 border-[#5C1D24]'
+                        : 'text-[#5A544F] hover:bg-[#EFECE5] hover:text-[#1A1817] font-medium'
                     }`}
                   >
                     <div className="flex items-center gap-2.5 truncate">
-                      <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-gold-400' : 'text-ayurveda-400'}`} />
+                      <Icon className={`w-4 h-4 ${isActive ? 'text-[#5C1D24]' : 'text-[#8C857E]'}`} strokeWidth={isActive ? 2.2 : 1.8} />
                       <span className="truncate">{item.label}</span>
                     </div>
-                    {isActive && <ChevronRight className="w-3 h-3 text-gold-400 shrink-0" />}
+                    {isActive && <ChevronRight className="w-3.5 h-3.5 text-[#5C1D24] shrink-0" />}
                   </Link>
                 );
               })}
@@ -167,15 +168,14 @@ export default function Sidebar() {
       </nav>
 
       {/* Footer / Logout */}
-      <div className="p-3 border-t border-ayurveda-800 shrink-0">
+      <div className="p-3 border-t border-[#EAE5DC] shrink-0 bg-[#F2EEE7]/60">
         <button
           onClick={logout}
-          className="w-full flex items-center justify-center gap-2 py-2 px-3 bg-red-950/40 hover:bg-red-900/60 text-red-300 border border-red-800/50 rounded-xl text-xs font-bold transition-all cursor-pointer"
+          className="w-full flex items-center justify-center gap-2 py-2 px-3 bg-[#FDF2F4] hover:bg-[#FCE4E8] text-[#8C1D2F] border border-[#F7D2D9] rounded-xl text-xs font-semibold transition-all cursor-pointer shadow-xs"
         >
-          <LogOut className="w-3.5 h-3.5" /> Terminate Session
+          <LogOut className="w-3.5 h-3.5" /> End Session
         </button>
       </div>
     </aside>
   );
 }
-

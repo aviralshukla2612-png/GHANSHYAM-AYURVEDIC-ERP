@@ -257,4 +257,40 @@ export class AccountingService {
       },
     };
   }
+
+  async getProcurementFinances() {
+    const purchaseOrders = await this.prisma.purchaseOrder.findMany({
+      include: {
+        supplier: true,
+        items: { include: { rawMaterial: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    const pendingRequests = await this.prisma.rawMaterialPurchaseRequest.findMany({
+      where: { status: { notIn: ['ORDERED', 'RECEIVED', 'RESOLVED'] } },
+      include: { items: { include: { rawMaterial: true } }, supplier: true },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    const totalPOValue = purchaseOrders.reduce((sum, po) => sum + (po.totalAmount || 0), 0);
+    const totalReceivedValue = purchaseOrders
+      .filter((po) => po.status === 'RECEIVED')
+      .reduce((sum, po) => sum + (po.totalAmount || 0), 0);
+    const pendingCommitment = pendingRequests.reduce(
+      (sum, req) => sum + (req.estimatedCost || 0),
+      0
+    );
+
+    return {
+      success: true,
+      data: {
+        totalPOValue,
+        totalReceivedValue,
+        pendingCommitment,
+        purchaseOrders,
+        pendingRequests,
+      },
+    };
+  }
 }

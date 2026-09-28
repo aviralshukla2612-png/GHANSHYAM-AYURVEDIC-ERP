@@ -41,4 +41,9 @@ export class AccountingController {
   async getGSTR1() {
     return this.accountingService.getGSTR1();
   }
+
+  @Get('procurement-finances')
+  async getProcurementFinances() {
+    return this.accountingService.getProcurementFinances();
+  }
 }

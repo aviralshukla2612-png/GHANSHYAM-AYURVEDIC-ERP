@@ -197,6 +197,21 @@ export default function ProductionPage() {
     },
   });
 
+  const [requestSuccess, setRequestSuccess] = useState<string | null>(null);
+
+  const requestMaterialMutation = useMutation({
+    mutationFn: (data: any) => apiClient.post('/api/raw-material-requests', data),
+    onSuccess: (res: any) => {
+      queryClient.invalidateQueries({ queryKey: ['productionRequests'] });
+      queryClient.invalidateQueries({ queryKey: ['productionDashboard'] });
+      setRequestSuccess(`✓ Material Request ${res.data?.requestNo || 'RM-REQ'} sent to Stock Manager!`);
+      setTimeout(() => setRequestSuccess(null), 5000);
+    },
+    onError: (err: any) => {
+      alert(err.response?.data?.message || err.message || 'Failed to request material');
+    },
+  });
+
   const handleCreateOrder = (e: React.FormEvent) => {
     e.preventDefault();
     const targetProduct =
@@ -290,19 +305,19 @@ export default function ProductionPage() {
   return (
     <div className="space-y-6 pb-16">
       {/* HEADER SECTION */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-gray-200 shadow-sm">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-[#EAE5DC] shadow-[0_1px_3px_rgba(26,24,23,0.02)]">
         <div>
           <div className="flex items-center gap-2">
-            <span className="px-2.5 py-1 rounded-md bg-emerald-100 text-emerald-800 text-[11px] font-black uppercase tracking-wider">
+            <span className="px-2.5 py-1 rounded-md bg-[#FAF8F5] text-[#5C1D24] text-[10px] font-bold uppercase tracking-wider font-mono border border-[#EAE5DC]">
               Manufacturing Operations
             </span>
-            <span className="text-xs text-gray-400">•</span>
-            <span className="text-xs font-semibold text-gray-600">Ghanshyam Ayurvedic Pharmacy</span>
+            <span className="text-xs text-[#8C857E]">•</span>
+            <span className="text-xs font-semibold text-[#78726D]">Ghanshyam Ayurvedic Pharmacy</span>
           </div>
-          <h1 className="text-2xl font-black text-gray-900 mt-1 flex items-center gap-2">
-            <Factory className="w-7 h-7 text-ayurveda-700" /> Production Control Center
+          <h1 className="text-2xl font-bold text-[#1A1817] mt-1 flex items-center gap-2">
+            <Factory className="w-6 h-6 text-[#5C1D24]" /> Production Control Center
           </h1>
-          <p className="text-xs text-gray-500 mt-1 max-w-3xl">
+          <p className="text-xs text-[#78726D] mt-1 max-w-3xl">
             Plan production, manage batches (`KAY-2026-XXXX`), monitor material consumption, track stage-wise wastage and release finished goods to sellable inventory.
           </p>
         </div>
@@ -310,21 +325,21 @@ export default function ProductionPage() {
         <div className="flex flex-wrap items-center gap-2.5 shrink-0">
           <button
             onClick={() => setShowOrderModal(true)}
-            className="px-4 py-2.5 bg-ayurveda-700 hover:bg-ayurveda-800 text-white font-bold text-xs rounded-xl transition-all shadow-md flex items-center gap-2 cursor-pointer"
+            className="px-4 py-2.5 bg-[#1A1817] hover:bg-[#2E2927] text-white font-bold text-xs rounded-xl transition-all shadow-xs flex items-center gap-2 cursor-pointer"
           >
-            <Plus className="w-4 h-4" /> + Schedule Production
+            <Plus className="w-4 h-4 text-[#B8944D]" /> + Schedule Production
           </button>
           <button
             onClick={() => setShowOrderModal(true)}
-            className="px-4 py-2.5 bg-gold-600 hover:bg-gold-700 text-ayurveda-950 font-extrabold text-xs rounded-xl transition-all shadow-md flex items-center gap-2 cursor-pointer"
+            className="px-4 py-2.5 bg-[#5C1D24] hover:bg-[#4A151C] text-white font-bold text-xs rounded-xl transition-all shadow-xs flex items-center gap-2 cursor-pointer"
           >
-            <Plus className="w-4 h-4" /> + Create Production Order
+            <Plus className="w-4 h-4 text-[#B8944D]" /> + Create Production Order
           </button>
         </div>
       </div>
 
       {/* SECONDARY QUICK ACTIONS BAR */}
-      <div className="flex items-center gap-2 bg-gray-100/70 p-1.5 rounded-2xl border border-gray-200 overflow-x-auto">
+      <div className="flex items-center gap-2 bg-white p-1.5 rounded-2xl border border-[#EAE5DC] overflow-x-auto shadow-2xs no-scrollbar">
         {[
           { id: 'all', label: 'All Operational Sections' },
           { id: 'queue', label: 'Production Requests Queue' },
@@ -336,10 +351,10 @@ export default function ProductionPage() {
           <button
             key={action.id}
             onClick={() => setActiveTab(action.id as any)}
-            className={`px-3.5 py-1.5 rounded-xl font-bold text-xs transition-all whitespace-nowrap cursor-pointer ${
+            className={`px-3.5 py-1.5 rounded-xl font-semibold text-xs transition-all whitespace-nowrap cursor-pointer shrink-0 ${
               activeTab === action.id
-                ? 'bg-white text-ayurveda-900 shadow-sm border border-gray-200'
-                : 'text-gray-600 hover:text-gray-900'
+                ? 'bg-[#1A1817] text-white shadow-xs'
+                : 'text-[#5A544F] hover:bg-[#FAF8F5] hover:text-[#1A1817]'
             }`}
           >
             {action.label}
@@ -350,259 +365,340 @@ export default function ProductionPage() {
       {/* 6 TOP OPERATIONAL KPI CARDS */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
         {/* CARD 1: TODAY'S PRODUCTION */}
-        <div className="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm space-y-1">
-          <div className="flex items-center justify-between text-xs font-bold text-gray-500">
-            <span>TODAY'S PRODUCTION</span>
-            <Factory className="w-4 h-4 text-emerald-600" />
+        <div className="bg-white p-4 rounded-2xl border border-[#EAE5DC] shadow-[0_1px_3px_rgba(26,24,23,0.02)] space-y-1 min-w-0 overflow-hidden">
+          <div className="flex items-center justify-between text-xs font-semibold text-[#8C857E] font-mono">
+            <span className="truncate">TODAY'S PRODUCTION</span>
+            <Factory className="w-4 h-4 text-[#5C1D24]" />
           </div>
-          <p className="text-xl font-black text-gray-900">
-            {(kpis.todayProduction || 1200).toLocaleString()} <span className="text-xs font-semibold text-gray-500">Units</span>
+          <p className="text-xl font-bold text-[#1A1817] truncate">
+            {(kpis.todayProduction || 1200).toLocaleString()} <span className="text-xs font-semibold text-[#78726D]">Units</span>
           </p>
-          <div className="text-[10px] font-bold text-gray-600 flex justify-between pt-1">
+          <div className="text-[10px] font-bold text-[#78726D] flex justify-between pt-1 truncate">
             <span>Target: {kpis.todayTarget || 1500}</span>
-            <span className="text-emerald-700 font-extrabold">{kpis.todayAchievementPct || 80}%</span>
+            <span className="text-[#5C1D24] font-bold bg-[#FAF8F5] border border-[#EAE5DC] px-1.5 py-0.5 rounded">{kpis.todayAchievementPct || 80}%</span>
           </div>
         </div>
 
         {/* CARD 2: ACTIVE BATCHES */}
-        <div className="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm space-y-1">
-          <div className="flex items-center justify-between text-xs font-bold text-gray-500">
-            <span>ACTIVE BATCHES</span>
-            <Layers className="w-4 h-4 text-amber-600" />
+        <div className="bg-white p-4 rounded-2xl border border-[#EAE5DC] shadow-[0_1px_3px_rgba(26,24,23,0.02)] space-y-1 min-w-0 overflow-hidden">
+          <div className="flex items-center justify-between text-xs font-semibold text-[#8C857E] font-mono">
+            <span className="truncate">ACTIVE BATCHES</span>
+            <Layers className="w-4 h-4 text-[#8C6512]" />
           </div>
-          <p className="text-xl font-black text-gray-900">{kpis.activeBatchesCount || 3} Running</p>
-          <p className="text-[10px] font-semibold text-gray-500 truncate">
+          <p className="text-xl font-bold text-[#1A1817] truncate">{kpis.activeBatchesCount || 3} Running</p>
+          <p className="text-[10px] font-medium text-[#78726D] truncate">
             Grinding: 1 • Mixing: 1 • Filling: 1
           </p>
         </div>
 
         {/* CARD 3: PENDING PRODUCTION */}
-        <div className="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm space-y-1">
-          <div className="flex items-center justify-between text-xs font-bold text-gray-500">
-            <span>PENDING ORDERS</span>
-            <Clock className="w-4 h-4 text-blue-600" />
+        <div className="bg-white p-4 rounded-2xl border border-[#EAE5DC] shadow-[0_1px_3px_rgba(26,24,23,0.02)] space-y-1 min-w-0 overflow-hidden">
+          <div className="flex items-center justify-between text-xs font-semibold text-[#8C857E] font-mono">
+            <span className="truncate">PENDING ORDERS</span>
+            <Clock className="w-4 h-4 text-[#78726D]" />
           </div>
-          <p className="text-xl font-black text-gray-900">{kpis.pendingProductionOrdersCount || 8} Orders</p>
-          <p className="text-[10px] font-extrabold text-rose-700">
+          <p className="text-xl font-bold text-[#1A1817] truncate">{kpis.pendingProductionOrdersCount || 8} Orders</p>
+          <p className="text-[10px] font-bold text-[#8C1D2F] truncate">
             {kpis.highPriorityPendingCount || 3} High Priority • {kpis.normalPendingCount || 5} Normal
           </p>
         </div>
 
         {/* CARD 4: PRODUCTION EFFICIENCY */}
-        <div className="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm space-y-1">
-          <div className="flex items-center justify-between text-xs font-bold text-gray-500">
-            <span>EFFICIENCY RATE</span>
-            <TrendingUp className="w-4 h-4 text-indigo-600" />
+        <div className="bg-white p-4 rounded-2xl border border-[#EAE5DC] shadow-[0_1px_3px_rgba(26,24,23,0.02)] space-y-1 min-w-0 overflow-hidden">
+          <div className="flex items-center justify-between text-xs font-semibold text-[#8C857E] font-mono">
+            <span className="truncate">EFFICIENCY RATE</span>
+            <TrendingUp className="w-4 h-4 text-[#5C1D24]" />
           </div>
-          <p className="text-xl font-black text-gray-900">{kpis.productionEfficiencyPct || 96.4}%</p>
-          <p className="text-[10px] font-semibold text-gray-500">Target: {kpis.targetEfficiencyPct || 95.0}%</p>
+          <p className="text-xl font-bold text-[#1A1817] truncate">{kpis.productionEfficiencyPct || 96.4}%</p>
+          <p className="text-[10px] font-medium text-[#78726D] truncate">Target: {kpis.targetEfficiencyPct || 95.0}%</p>
         </div>
 
         {/* CARD 5: AVERAGE YIELD */}
-        <div className="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm space-y-1">
-          <div className="flex items-center justify-between text-xs font-bold text-gray-500">
-            <span>AVERAGE YIELD</span>
-            <Scale className="w-4 h-4 text-teal-600" />
+        <div className="bg-white p-4 rounded-2xl border border-[#EAE5DC] shadow-[0_1px_3px_rgba(26,24,23,0.02)] space-y-1 min-w-0 overflow-hidden">
+          <div className="flex items-center justify-between text-xs font-semibold text-[#8C857E] font-mono">
+            <span className="truncate">AVERAGE YIELD</span>
+            <Scale className="w-4 h-4 text-[#8C6512]" />
           </div>
-          <p className="text-xl font-black text-gray-900">{kpis.averageYieldPct || 97.2}%</p>
-          <p className="text-[10px] font-semibold text-gray-500">Expected: {kpis.expectedYieldPct || 97.0}%</p>
+          <p className="text-xl font-bold text-[#1A1817] truncate">{kpis.averageYieldPct || 97.2}%</p>
+          <p className="text-[10px] font-medium text-[#78726D] truncate">Expected: {kpis.expectedYieldPct || 97.0}%</p>
         </div>
 
         {/* CARD 6: TODAY'S WASTAGE */}
-        <div className="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm space-y-1">
-          <div className="flex items-center justify-between text-xs font-bold text-gray-500">
-            <span>TODAY'S WASTAGE</span>
-            <Flame className="w-4 h-4 text-rose-600" />
+        <div className="bg-white p-4 rounded-2xl border border-[#EAE5DC] shadow-[0_1px_3px_rgba(26,24,23,0.02)] space-y-1 min-w-0 overflow-hidden">
+          <div className="flex items-center justify-between text-xs font-semibold text-[#8C857E] font-mono">
+            <span className="truncate">TODAY'S WASTAGE</span>
+            <Flame className="w-4 h-4 text-[#5C1D24]" />
           </div>
-          <p className="text-xl font-black text-gray-900">{kpis.todayWastagePct || 2.5}%</p>
-          <span className="text-[10px] font-extrabold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded inline-block">
+          <p className="text-xl font-bold text-[#1A1817] truncate">{kpis.todayWastagePct || 2.5}%</p>
+          <span className="text-[10px] font-bold text-[#5C1D24] bg-[#FAF8F5] border border-[#EAE5DC] px-1.5 py-0.5 rounded inline-block truncate">
             {kpis.wastageStatus || 'Within tolerance'} (Max: {kpis.allowedWastagePct || 3.0}%)
           </span>
         </div>
       </div>
 
-      {/* PRIMARY OPERATIONAL AREA: 2-COLUMN SPLIT (QUEUES vs MATERIAL READINESS) */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* LEFT COLUMN: PRODUCTION QUEUE */}
-        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 space-y-4">
-          <div className="flex items-center justify-between border-b pb-3">
-            <div>
-              <h3 className="font-bold text-base text-gray-900">PRODUCTION QUEUE</h3>
-              <p className="text-xs text-gray-500">Sales orders & requests requiring manufacturing allocation</p>
-            </div>
-            <span className="px-2.5 py-1 rounded-full bg-amber-100 text-amber-900 font-extrabold text-xs">
-              {requests.length} Requests
-            </span>
-          </div>
-
-          <div className="space-y-3">
-            {requests.length === 0 ? (
-              <div className="p-6 text-center text-gray-400 text-xs space-y-2">
-                <ClipboardList className="w-8 h-8 mx-auto text-gray-300" />
-                <p>No sales production requests pending.</p>
-              </div>
-            ) : (
-              requests.slice(0, 3).map((req: any, idx: number) => {
-                const isShort = req.materialStatus === 'SHORT' || idx === 1;
-                return (
-                  <div key={req.id || idx} className="p-4 bg-gray-50 rounded-xl border border-gray-200 space-y-3 text-xs">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <span className="font-extrabold text-ayurveda-900">{req.requestNo || `PR-2026-00${idx + 1}`}</span>
-                        <span className="px-2 py-0.5 bg-gray-200 text-gray-700 rounded font-bold text-[10px]">
-                          Order: {req.salesOrder?.orderNumber || `SO-102${idx + 4}`}
-                        </span>
-                      </div>
-                      <span
-                        className={`px-2.5 py-0.5 rounded text-[10px] font-extrabold ${
-                          idx === 0
-                            ? 'bg-rose-100 text-rose-800'
-                            : 'bg-blue-100 text-blue-800'
-                        }`}
-                      >
-                        {idx === 0 ? 'HIGH PRIORITY' : 'NORMAL'}
-                      </span>
-                    </div>
-
-                    <div>
-                      <h4 className="font-bold text-sm text-gray-900">{req.product?.name || (idx === 0 ? 'Kayam Churna' : idx === 1 ? 'Ayurvedic Cough Syrup' : 'Neem Soap')}</h4>
-                      <p className="text-gray-500">Customer: <strong className="text-gray-800">{req.salesOrder?.customer?.name || 'Gujarat Herbal Distributors'}</strong></p>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-2 bg-white p-2.5 rounded-lg border border-gray-200/80">
-                      <div>
-                        <span className="text-[10px] text-gray-500 font-bold block">Production Required</span>
-                        <span className="font-black text-gray-900">{req.requestedQuantity || (idx === 0 ? 250 : idx === 1 ? 500 : 1000)} {idx === 1 ? 'Bottles' : 'Units'}</span>
-                      </div>
-                      <div>
-                        <span className="text-[10px] text-gray-500 font-bold block">Material Status</span>
-                        <span className={`font-extrabold ${isShort ? 'text-rose-700' : 'text-emerald-700'}`}>
-                          {isShort ? '⚠ PARTIAL (Short: 2 RMs)' : '✓ READY FOR PRODUCTION'}
-                        </span>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center justify-between pt-1">
-                      <span className="text-[11px] text-gray-500 font-semibold">Required By: 28 Sep 2026</span>
-                      {isShort ? (
-                        <button
-                          onClick={() => setActiveTab('readiness')}
-                          className="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs rounded-lg transition-all cursor-pointer"
-                        >
-                          View Material Requirement
-                        </button>
-                      ) : (
-                        <button
-                          onClick={() => {
-                            setSelectedProduct(req.productId);
-                            setPlannedQty(req.requestedQuantity);
-                            setShowOrderModal(true);
-                          }}
-                          className="px-3 py-1.5 bg-ayurveda-700 hover:bg-ayurveda-800 text-white font-bold text-xs rounded-lg transition-all cursor-pointer"
-                        >
-                          Schedule Batch
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                );
-              })
-            )}
-          </div>
-        </div>
-
-        {/* RIGHT COLUMN: RAW MATERIAL READINESS */}
-        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 space-y-4">
-          <div className="flex items-center justify-between border-b pb-3">
-            <div>
-              <h3 className="font-bold text-base text-gray-900">RAW MATERIAL READINESS</h3>
-              <p className="text-xs text-gray-500">BOM formulation stock verification & shortage alerts</p>
-            </div>
-            <span className="px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-900 font-extrabold text-xs">
-              Kayam Churna (92% Ready)
-            </span>
-          </div>
-
-          <div className="space-y-3 text-xs">
-            {/* Ingredient A */}
-            <div className="p-3 bg-gray-50 rounded-xl border border-gray-200 flex items-center justify-between">
+      {/* PRIMARY OPERATIONAL AREA: QUEUE & RAW MATERIAL READINESS */}
+      {(activeTab === 'all' || activeTab === 'queue') && (
+        <div className={activeTab === 'all' ? '' : 'w-full'}>
+          {/* PRODUCTION QUEUE CARD */}
+          <div className="bg-white rounded-2xl border border-[#EAE5DC] shadow-[0_1px_3px_rgba(26,24,23,0.02)] p-5 space-y-4">
+            <div className="flex items-center justify-between border-b border-[#EAE5DC] pb-3">
               <div>
-                <h5 className="font-bold text-gray-900">Haritaki Powder (RM-HAR-01)</h5>
-                <p className="text-[11px] text-gray-500">Required: 12.5 kg | Available: 15.0 kg</p>
+                <span className="text-[10px] font-bold text-[#6B1D2F] uppercase tracking-wider font-mono">MANUFACTURING ALLOCATION</span>
+                <h3 className="font-bold text-base text-[#1A1817]">PRODUCTION QUEUE</h3>
+                <p className="text-xs text-[#78726D]">Sales orders & requests requiring manufacturing allocation</p>
               </div>
-              <span className="px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 font-extrabold text-[10px]">
-                ✓ READY
+              <span className="px-2.5 py-1 rounded-full bg-[#FAF8F5] text-[#5C1D24] border border-[#EAE5DC] font-bold text-xs font-mono">
+                {requests.length} Requests
               </span>
             </div>
 
-            {/* Ingredient B */}
-            <div className="p-3 bg-gray-50 rounded-xl border border-gray-200 flex items-center justify-between">
-              <div>
-                <h5 className="font-bold text-gray-900">Ingredient B (Extract Lot)</h5>
-                <p className="text-[11px] text-gray-500">Required: 7.0 kg | Available: 7.0 kg</p>
-              </div>
-              <span className="px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 font-extrabold text-[10px]">
-                ✓ READY
-              </span>
-            </div>
-
-            {/* Ingredient C (SHORTAGE) */}
-            <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl space-y-2">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h5 className="font-bold text-rose-950">Ingredient C (Botanical Base)</h5>
-                  <p className="text-[11px] text-rose-800">Required: 5.0 kg | Available: 2.0 kg | <strong className="text-rose-900">Shortage: 3.0 kg</strong></p>
+            <div className="space-y-3">
+              {requests.length === 0 ? (
+                <div className="p-6 text-center text-[#8C857E] text-xs space-y-2">
+                  <ClipboardList className="w-8 h-8 mx-auto text-[#A39D96]" />
+                  <p>No sales production requests pending.</p>
                 </div>
-                <span className="px-2.5 py-1 rounded-full bg-rose-200 text-rose-900 font-extrabold text-[10px]">
-                  🔴 SHORT
-                </span>
-              </div>
-              <div className="pt-2 border-t border-rose-200 flex items-center justify-between text-[11px]">
-                <span className="text-rose-800 font-semibold">Linked Purchase Request: <strong>RM-REQ-0042</strong> (ETA: 29 Sep)</span>
-                <button
-                  onClick={() => alert('Opening linked Purchase Request RM-REQ-0042')}
-                  className="px-2.5 py-1 bg-rose-900 text-white font-bold rounded text-[10px] cursor-pointer"
-                >
-                  View Purchase Request
-                </button>
-              </div>
+              ) : (
+                requests.slice(0, activeTab === 'queue' ? 10 : 3).map((req: any, idx: number) => {
+                  const isShort = req.materialStatus === 'SHORT' || idx === 1;
+                  return (
+                    <div
+                      key={req.id || idx}
+                      className={`p-4 rounded-xl space-y-3 text-xs transition-all ${
+                        isShort
+                          ? 'bg-[#FFFDFC] border-2 border-[#DC2626] shadow-2xs'
+                          : 'bg-white border border-[#EAE5DC]'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <span className="font-mono font-bold text-[#5C1D24]">{req.requestNo || `PR-2026-00${idx + 1}`}</span>
+                          <span className="px-2 py-0.5 bg-[#FAF8F5] text-[#1A1817] border border-[#EAE5DC] rounded font-mono text-[10px] font-bold">
+                            Order: {req.salesOrder?.orderNumber || `SO-102${idx + 4}`}
+                          </span>
+                        </div>
+                        <span
+                          className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${
+                            idx === 0
+                              ? 'bg-[#FAF6ED] text-[#8C6512] border-[#EAD7B5]'
+                              : 'bg-[#FAF8F5] text-[#5A544F] border-[#EAE5DC]'
+                          }`}
+                        >
+                          {idx === 0 ? 'HIGH PRIORITY' : 'NORMAL'}
+                        </span>
+                      </div>
+
+                      <div>
+                        <h4 className="font-bold text-sm text-[#1A1817]">{req.product?.name || (idx === 0 ? 'Kayam Churna' : idx === 1 ? 'Ayurvedic Cough Syrup' : 'Neem Soap')}</h4>
+                        <p className="text-[#78726D]">Customer: <strong className="text-[#1A1817]">{req.salesOrder?.customer?.name || 'Gujarat Herbal Distributors'}</strong></p>
+                      </div>
+
+                      <div className={`grid grid-cols-2 gap-2 p-2.5 rounded-xl border ${
+                        isShort ? 'bg-[#FEF2F2] border-[#DC2626]' : 'bg-[#FAF8F5] border-[#EAE5DC]'
+                      }`}>
+                        <div>
+                          <span className="text-[10px] text-[#78726D] font-bold block font-mono">Production Required</span>
+                          <span className="font-bold text-[#1A1817]">{req.requestedQuantity || (idx === 0 ? 250 : idx === 1 ? 500 : 1000)} {idx === 1 ? 'Bottles' : 'Units'}</span>
+                        </div>
+                        <div>
+                          <span className="text-[10px] text-[#78726D] font-bold block font-mono">Material Status</span>
+                          <span className={`font-bold ${isShort ? 'text-[#DC2626]' : 'text-[#5C1D24]'}`}>
+                            {isShort ? '⚠ PARTIAL (Short: 2 RMs)' : '✓ READY FOR PRODUCTION'}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between pt-1">
+                        <span className="text-[11px] text-[#78726D] font-medium">Required By: 28 Sep 2026</span>
+                        {isShort ? (
+                          <button
+                            onClick={() => setActiveTab('readiness')}
+                            className="px-3.5 py-1.5 bg-[#DC2626] hover:bg-[#B91C1C] text-white font-bold text-xs rounded-xl transition-all cursor-pointer shadow-xs"
+                          >
+                            View Material Requirement
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => {
+                              setSelectedProduct(req.productId);
+                              setPlannedQty(req.requestedQuantity);
+                              setShowOrderModal(true);
+                            }}
+                            className="px-3.5 py-1.5 bg-[#1A1817] hover:bg-[#2E2927] text-white font-bold text-xs rounded-xl transition-all cursor-pointer shadow-xs"
+                          >
+                            Schedule Batch
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })
+              )}
             </div>
           </div>
         </div>
-      </div>
+      )}
+
+      {(activeTab === 'all' || activeTab === 'readiness') && (
+        <div className={activeTab === 'all' ? '' : 'w-full'}>
+          {/* RAW MATERIAL READINESS & SHORTAGES CARD */}
+          <div className="bg-white rounded-2xl border border-[#EAE5DC] shadow-[0_1px_3px_rgba(26,24,23,0.02)] p-5 space-y-4">
+            <div className="flex items-center justify-between border-b border-[#EAE5DC] pb-3">
+              <div>
+                <span className="text-[10px] font-bold text-[#6B1D2F] uppercase tracking-wider font-mono">BOM VERIFICATION</span>
+                <h3 className="font-bold text-base text-[#1A1817]">RAW MATERIAL SHORTAGES & READINESS</h3>
+                <p className="text-xs text-[#78726D]">BOM formulation stock verification & procurement requests</p>
+              </div>
+              <span className="px-2.5 py-1 rounded-full bg-[#FAF8F5] text-[#5C1D24] border border-[#EAE5DC] font-bold text-xs font-mono">
+                Live BOM Check
+              </span>
+            </div>
+
+            {requestSuccess && (
+              <div className="p-3 bg-[#FAF8F5] border border-[#EAE5DC] rounded-xl text-[#1A1817] font-semibold text-xs flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-[#5C1D24]" />
+                {requestSuccess}
+              </div>
+            )}
+
+            <div className="space-y-3 text-xs max-h-[550px] overflow-y-auto">
+              {(!dashboardData.materialReadiness || dashboardData.materialReadiness.length === 0) ? (
+                <div className="p-4 bg-[#FAF8F5] border border-[#EAE5DC] rounded-xl text-[#5C1D24] font-semibold text-center">
+                  ✓ All raw materials are sufficient for current scheduled production orders.
+                </div>
+              ) : (
+                dashboardData.materialReadiness.map((mReq: any) => {
+                  const hasShortage = mReq.readinessPct < 100;
+                  return (
+                    <div
+                      key={mReq.id}
+                      className={`p-3.5 rounded-xl space-y-2 transition-all ${
+                        hasShortage
+                          ? 'bg-[#FFFDFC] border-2 border-[#DC2626] shadow-2xs'
+                          : 'bg-white border border-[#EAE5DC]'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between border-b border-[#EAE5DC] pb-1.5">
+                        <div>
+                          <h4 className="font-bold text-[#1A1817]">{mReq.productName}</h4>
+                          <p className="text-[11px] text-[#78726D]">Target: {mReq.requestedQuantity} Units</p>
+                        </div>
+                        <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${
+                          mReq.readinessPct >= 100
+                            ? 'bg-[#FAF8F5] text-[#5C1D24] border-[#EAE5DC]'
+                            : 'bg-[#FEF2F2] text-[#DC2626] border-[#DC2626]'
+                        }`}>
+                          {mReq.readinessPct}% Ready
+                        </span>
+                      </div>
+
+                      <div className="space-y-2 pt-1">
+                        {mReq.breakdown.map((item: any) => {
+                          const isShort = item.shortageQuantity > 0;
+                          return (
+                            <div
+                              key={item.rawMaterialId}
+                              className={`rounded-xl flex items-center justify-between transition-all overflow-hidden ${
+                                isShort
+                                  ? 'border-2 border-[#DC2626] shadow-[0_0_0_1px_rgba(220,38,38,0.15)] bg-[#FEF2F2]'
+                                  : 'border border-[#EAE5DC] bg-[#FAF8F5]'
+                              }`}
+                            >
+                              {isShort && (
+                                <div className="w-1.5 self-stretch bg-[#DC2626] shrink-0" />
+                              )}
+                              <div className="flex items-center justify-between w-full p-2.5 gap-2">
+                                <div>
+                                  <p className={`font-bold text-xs ${isShort ? 'text-[#7F1D1D]' : 'text-[#1A1817]'}`}>
+                                    {isShort && <span className="mr-1">⚠</span>}{item.name}
+                                  </p>
+                                  <p className="text-[11px] text-[#78726D] mt-0.5">
+                                    Req: <strong>{item.requiredQuantity}</strong> | Avail: <strong>{item.availableQuantity}</strong>
+                                    {isShort && (
+                                      <strong className="text-[#DC2626] ml-1 font-bold">
+                                        (Short: {item.shortageQuantity})
+                                      </strong>
+                                    )}
+                                  </p>
+                                </div>
+
+                                {isShort ? (
+                                  <button
+                                    onClick={() =>
+                                      requestMaterialMutation.mutate({
+                                        productionRequestId: mReq.id,
+                                        reason: `Shortage of ${item.shortageQuantity} for ${mReq.productName}`,
+                                        requiredDate: new Date(Date.now() + 5 * 86400000).toISOString(),
+                                        items: [
+                                          {
+                                            rawMaterialId: item.rawMaterialId,
+                                            requiredQuantity: item.requiredQuantity,
+                                            availableQuantity: item.availableQuantity,
+                                            shortageQuantity: item.shortageQuantity,
+                                            unit: 'KG',
+                                            estimatedRate: 100,
+                                          },
+                                        ],
+                                      })
+                                    }
+                                    disabled={requestMaterialMutation.isPending}
+                                    className="px-3 py-1.5 bg-[#DC2626] hover:bg-[#B91C1C] text-white font-bold rounded-lg text-[10px] cursor-pointer shadow-sm transition-all active:scale-95 whitespace-nowrap shrink-0"
+                                  >
+                                    {requestMaterialMutation.isPending ? 'Requesting...' : 'Request Material'}
+                                  </button>
+                                ) : (
+                                  <span className="px-2.5 py-0.5 rounded-full bg-[#FAF8F5] text-[#5C1D24] border border-[#EAE5DC] font-bold text-[10px] shrink-0">
+                                    ✓ READY
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* SECTION: ACTIVE PRODUCTION BATCHES (TABLE + CARDS) */}
-      <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b pb-4">
+      {(activeTab === 'all' || activeTab === 'batches') && (
+      <div className="bg-white rounded-2xl border border-[#EAE5DC] shadow-[0_1px_3px_rgba(26,24,23,0.02)] p-6 space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#EAE5DC] pb-4">
           <div>
-            <h3 className="font-bold text-base text-gray-900">ACTIVE PRODUCTION BATCHES</h3>
-            <p className="text-xs text-gray-500">Live operational floor status, stage tracking, wastage logs & quality inspection</p>
+            <span className="text-[10px] font-bold text-[#6B1D2F] uppercase tracking-wider font-mono">FLOOR EXECUTION</span>
+            <h3 className="font-bold text-base text-[#1A1817]">ACTIVE PRODUCTION BATCHES</h3>
+            <p className="text-xs text-[#78726D]">Live operational floor status, stage tracking, wastage logs & quality inspection</p>
           </div>
 
           <div className="flex items-center gap-2">
-            <div className="flex items-center bg-gray-100 p-1 rounded-lg border border-gray-200">
+            <div className="flex items-center bg-[#FAF8F5] p-1 rounded-xl border border-[#EAE5DC]">
               <button
                 onClick={() => setBatchViewMode('table')}
-                className={`p-1.5 rounded-md ${batchViewMode === 'table' ? 'bg-white shadow-xs text-ayurveda-900' : 'text-gray-500'}`}
+                className={`p-1.5 rounded-lg cursor-pointer ${batchViewMode === 'table' ? 'bg-white shadow-2xs text-[#1A1817]' : 'text-[#78726D]'}`}
               >
                 <List className="w-4 h-4" />
               </button>
               <button
                 onClick={() => setBatchViewMode('cards')}
-                className={`p-1.5 rounded-md ${batchViewMode === 'cards' ? 'bg-white shadow-xs text-ayurveda-900' : 'text-gray-500'}`}
+                className={`p-1.5 rounded-lg cursor-pointer ${batchViewMode === 'cards' ? 'bg-white shadow-2xs text-[#1A1817]' : 'text-[#78726D]'}`}
               >
                 <Grid className="w-4 h-4" />
               </button>
             </div>
 
             <div className="relative">
-              <Search className="w-3.5 h-3.5 absolute left-3 top-2.5 text-gray-400" />
+              <Search className="w-3.5 h-3.5 absolute left-3 top-2.5 text-[#8C857E]" />
               <input
                 type="text"
                 placeholder="Search batch..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-8 pr-3 py-1 bg-gray-50 border border-gray-200 rounded-lg text-xs"
+                className="pl-8 pr-3 py-1.5 bg-[#FAF8F5] border border-[#EAE5DC] rounded-xl text-xs text-[#1A1817] focus:outline-hidden focus:bg-white"
               />
             </div>
           </div>
@@ -611,44 +707,44 @@ export default function ProductionPage() {
         {/* ZERO ACTIVE BATCHES FALLBACK SUMMARY */}
         {filteredOrders.length === 0 ? (
           <div className="space-y-6">
-            <div className="p-6 bg-gray-50 rounded-xl border border-dashed border-gray-300 text-center space-y-2">
-              <Factory className="w-8 h-8 text-gray-400 mx-auto" />
-              <h4 className="font-bold text-sm text-gray-800">0 Active Batches Currently Running</h4>
-              <p className="text-xs text-gray-500">No production batches are active on the shop floor at this moment.</p>
+            <div className="p-6 bg-[#FAF8F5] rounded-2xl border border-dashed border-[#EAE5DC] text-center space-y-2">
+              <Factory className="w-8 h-8 text-[#8C857E] mx-auto" />
+              <h4 className="font-bold text-sm text-[#1A1817]">0 Active Batches Currently Running</h4>
+              <p className="text-xs text-[#78726D]">No production batches are active on the shop floor at this moment.</p>
             </div>
 
             {/* Immediate operational summary grid */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div className="p-4 bg-blue-50 border border-blue-200 rounded-xl space-y-1">
-                <span className="text-[10px] font-bold text-blue-800 uppercase">Upcoming Production</span>
-                <p className="text-lg font-black text-blue-950">4 Orders Scheduled</p>
-                <p className="text-[11px] text-blue-700">Next: Kayam Churna (10:00 AM)</p>
+              <div className="p-4 bg-white border border-[#EAE5DC] rounded-2xl space-y-1">
+                <span className="text-[10px] font-bold text-[#78726D] uppercase font-mono">Upcoming Production</span>
+                <p className="text-lg font-bold text-[#1A1817]">4 Orders Scheduled</p>
+                <p className="text-[11px] text-[#5A544F]">Next: Kayam Churna (10:00 AM)</p>
               </div>
 
-              <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl space-y-1">
-                <span className="text-[10px] font-bold text-amber-800 uppercase">Material Pending</span>
-                <p className="text-lg font-black text-amber-950">2 Orders Waiting</p>
-                <p className="text-[11px] text-amber-700">Ingredient C arriving 29 Sep</p>
+              <div className="p-4 bg-white border border-[#EAE5DC] rounded-2xl space-y-1">
+                <span className="text-[10px] font-bold text-[#8C6512] uppercase font-mono">Material Pending</span>
+                <p className="text-lg font-bold text-[#8C6512]">2 Orders Waiting</p>
+                <p className="text-[11px] text-[#78726D]">Ingredient C arriving 29 Sep</p>
               </div>
 
-              <div className="p-4 bg-purple-50 border border-purple-200 rounded-xl space-y-1">
-                <span className="text-[10px] font-bold text-purple-800 uppercase">Quality Checks</span>
-                <p className="text-lg font-black text-purple-950">3 Checks Pending</p>
-                <p className="text-[11px] text-purple-700">Assigned: Dr. Sharma (QC)</p>
+              <div className="p-4 bg-white border border-[#EAE5DC] rounded-2xl space-y-1">
+                <span className="text-[10px] font-bold text-[#5C1D24] uppercase font-mono">Quality Checks</span>
+                <p className="text-lg font-bold text-[#5C1D24]">3 Checks Pending</p>
+                <p className="text-[11px] text-[#78726D]">Assigned: Dr. Sharma (QC)</p>
               </div>
 
-              <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-xl space-y-1">
-                <span className="text-[10px] font-bold text-emerald-800 uppercase">Recently Completed</span>
-                <p className="text-lg font-black text-emerald-950">12 Batches Released</p>
-                <p className="text-[11px] text-emerald-700">Stock updated in warehouse</p>
+              <div className="p-4 bg-white border border-[#EAE5DC] rounded-2xl space-y-1">
+                <span className="text-[10px] font-bold text-[#5C1D24] uppercase font-mono">Recently Completed</span>
+                <p className="text-lg font-bold text-[#1A1817]">12 Batches Released</p>
+                <p className="text-[11px] text-[#78726D]">Stock updated in warehouse</p>
               </div>
             </div>
           </div>
         ) : batchViewMode === 'table' ? (
           /* DETAILED TABLE VIEW */
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead className="bg-gray-50 text-gray-700 font-bold uppercase text-[10px] tracking-wider border-b">
+            <table className="w-full text-left text-xs border-collapse">
+              <thead className="bg-[#FAF8F5] text-[#78726D] font-semibold uppercase text-[10px] tracking-wider border-b border-[#EAE5DC] font-mono">
                 <tr>
                   <th className="p-3">Batch No</th>
                   <th className="p-3">Product</th>
@@ -663,7 +759,7 @@ export default function ProductionPage() {
                   <th className="p-3 text-right">Action</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-200">
+              <tbody className="divide-y divide-[#EAE5DC]">
                 {filteredOrders.map((o: any) => {
                   const batchNo = o.batch?.batchNumber || `PO-${o.productionOrderNo?.slice(-6) || o.id.slice(0, 6)}`;
                   const soNo = o.productionRequest?.salesOrder?.orderNumber || 'SO-944718';
@@ -675,61 +771,67 @@ export default function ProductionPage() {
                   const qcStatus = o.qualityChecks?.[0]?.result || (isCompleted ? 'PASSED' : 'PENDING');
 
                   return (
-                    <tr key={o.id} className="hover:bg-gray-50">
-                      <td className="p-3 font-extrabold text-amber-900">{batchNo}</td>
-                      <td className="p-3 font-bold text-gray-900">{o.product?.name}</td>
-                      <td className="p-3 font-semibold text-gray-600">{soNo}</td>
-                      <td className="p-3 font-semibold">{o.plannedQuantity} {o.product?.unit || 'Units'}</td>
-                      <td className="p-3 font-black text-gray-900">{produced} {o.product?.unit || 'Units'}</td>
+                    <tr key={o.id} className="hover:bg-[#FAF8F5] transition-colors">
+                      <td className="p-3 font-mono font-bold text-[#5C1D24]">{batchNo}</td>
+                      <td className="p-3 font-semibold text-[#1A1817]">{o.product?.name}</td>
+                      <td className="p-3 font-mono text-[#78726D]">{soNo}</td>
+                      <td className="p-3 font-semibold text-[#1A1817]">{o.plannedQuantity} {o.product?.unit || 'Units'}</td>
+                      <td className="p-3 font-bold text-[#1A1817]">{produced} {o.product?.unit || 'Units'}</td>
                       <td className="p-3">
-                        <div className="w-24 bg-gray-200 h-2 rounded-full overflow-hidden">
+                        <div className="w-24 bg-[#EAE5DC] h-1.5 rounded-full overflow-hidden">
                           <div
-                            className="bg-amber-500 h-full"
+                            className="bg-[#B8944D] h-full"
                             style={{ width: `${progressPct}%` }}
                           />
                         </div>
                       </td>
-                      <td className="p-3 font-bold text-gray-800">{o.status}</td>
-                      <td className="p-3 font-medium text-gray-700">{o.supervisor || 'Ramesh (Floor Lead)'}</td>
-                      <td className="p-3 font-bold text-amber-700">0.0%</td>
+                      <td className="p-3 font-semibold text-[#1A1817]">{o.status}</td>
+                      <td className="p-3 text-[#5A544F]">{o.supervisor || 'Ramesh Patel (Production Supervisor)'}</td>
+                      <td className="p-3 font-semibold text-[#8C6512]">0.0%</td>
                       <td className="p-3">
-                        <span className={`px-2 py-0.5 rounded font-extrabold text-[10px] ${qcStatus === 'PASSED' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}`}>
+                        <span className={`px-2.5 py-0.5 rounded-full font-bold text-[10px] border ${
+                          qcStatus === 'PASSED'
+                            ? 'bg-[#FAF8F5] text-[#5C1D24] border-[#EAE5DC]'
+                            : 'bg-[#FAF6ED] text-[#8C6512] border-[#EAD7B5]'
+                        }`}>
                           {qcStatus}
                         </span>
                       </td>
-                      <td className="p-3 text-right space-x-1">
-                        {isPlanned && (
+                      <td className="p-3 text-right">
+                        <div className="flex items-center justify-end gap-1.5">
+                          {isPlanned && (
+                            <button
+                              onClick={() => startBatchMutation.mutate(o.id)}
+                              disabled={startBatchMutation.isPending}
+                              className="px-3 py-1.5 bg-[#1A1817] hover:bg-[#2E2927] text-white font-bold rounded-xl text-[11px] cursor-pointer shadow-xs transition-all flex items-center gap-1"
+                            >
+                              <Play className="w-3 h-3 text-[#B8944D]" /> {startBatchMutation.isPending ? 'Starting...' : 'Start Production'}
+                            </button>
+                          )}
+                          {isInProgress && (
+                            <button
+                              onClick={() => completeOrderMutation.mutate({ id: o.id, qty: o.plannedQuantity })}
+                              disabled={completeOrderMutation.isPending}
+                              className="px-3 py-1.5 bg-[#5C1D24] hover:bg-[#4A151C] text-white font-bold rounded-xl text-[11px] cursor-pointer shadow-xs transition-all"
+                            >
+                              {completeOrderMutation.isPending ? 'Completing...' : 'Pass QC & Complete'}
+                            </button>
+                          )}
+                          {isCompleted && (
+                            <span className="px-2.5 py-1 bg-[#FAF8F5] text-[#5C1D24] border border-[#EAE5DC] font-bold rounded-full text-[10px] inline-flex items-center gap-1">
+                              <Check className="w-3 h-3 text-[#5C1D24]" /> Completed
+                            </span>
+                          )}
                           <button
-                            onClick={() => startBatchMutation.mutate(o.id)}
-                            disabled={startBatchMutation.isPending}
-                            className="px-2.5 py-1 bg-emerald-700 hover:bg-emerald-800 text-white font-bold rounded text-[10px] cursor-pointer"
+                            onClick={() => {
+                              setTraceBatchId(batchNo);
+                              setActiveTab('batches');
+                            }}
+                            className="px-2.5 py-1.5 bg-white border border-[#EAE5DC] hover:bg-[#FAF8F5] text-[#5A544F] font-bold rounded-xl text-[11px] cursor-pointer shadow-2xs transition-all"
                           >
-                            {startBatchMutation.isPending ? 'Starting...' : 'Start Production'}
+                            Trace
                           </button>
-                        )}
-                        {isInProgress && (
-                          <button
-                            onClick={() => completeOrderMutation.mutate({ id: o.id, qty: o.plannedQuantity })}
-                            disabled={completeOrderMutation.isPending}
-                            className="px-2.5 py-1 bg-blue-700 hover:bg-blue-800 text-white font-bold rounded text-[10px] cursor-pointer"
-                          >
-                            {completeOrderMutation.isPending ? 'Completing...' : 'Pass QC & Complete'}
-                          </button>
-                        )}
-                        {isCompleted && (
-                          <span className="px-2.5 py-1 bg-gray-100 text-emerald-800 font-extrabold rounded text-[10px]">
-                            ✓ Completed
-                          </span>
-                        )}
-                        <button
-                          onClick={() => {
-                            setTraceBatchId(batchNo);
-                            setActiveTab('batches');
-                          }}
-                          className="px-2.5 py-1 bg-gray-100 text-gray-700 hover:bg-gray-200 font-bold rounded text-[10px] cursor-pointer"
-                        >
-                          Trace
-                        </button>
+                        </div>
                       </td>
                     </tr>
                   );
@@ -741,35 +843,35 @@ export default function ProductionPage() {
           /* ACTIVE BATCH CARD VIEW */
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {filteredOrders.map((o: any) => (
-              <div key={o.id} className="p-4 bg-gray-50 rounded-xl border border-gray-200 space-y-3 text-xs">
+              <div key={o.id} className="p-4 bg-white rounded-2xl border border-[#EAE5DC] shadow-2xs space-y-3 text-xs">
                 <div className="flex justify-between items-center">
-                  <span className="font-extrabold text-gold-700">{o.batch?.batchNumber || 'KAY-2026-0001'}</span>
-                  <span className="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 font-bold text-[10px]">
+                  <span className="font-bold text-[#5C1D24] font-mono">{o.batch?.batchNumber || 'KAY-2026-0001'}</span>
+                  <span className="px-2.5 py-0.5 rounded-full bg-[#FAF8F5] text-[#5C1D24] border border-[#EAE5DC] font-bold text-[10px]">
                     {o.status}
                   </span>
                 </div>
-                <h4 className="font-black text-sm text-gray-900">{o.product?.name}</h4>
+                <h4 className="font-bold text-sm text-[#1A1817]">{o.product?.name}</h4>
                 <div className="space-y-1">
-                  <div className="flex justify-between font-bold text-[10px] text-gray-600">
+                  <div className="flex justify-between font-bold text-[10px] text-[#78726D]">
                     <span>350 / {o.plannedQuantity} Units</span>
                     <span>70%</span>
                   </div>
-                  <div className="w-full bg-gray-200 h-2 rounded-full overflow-hidden">
-                    <div className="bg-amber-500 h-full w-[70%]" />
+                  <div className="w-full bg-[#EAE5DC] h-1.5 rounded-full overflow-hidden">
+                    <div className="bg-[#B8944D] h-full w-[70%]" />
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-2 text-[11px] pt-1">
-                  <div>Stage: <strong className="text-gray-900">Grinding</strong></div>
-                  <div>Operator: <strong className="text-gray-900">Ramesh</strong></div>
-                  <div>Wastage: <strong className="text-amber-700">2.4%</strong></div>
-                  <div>Quality: <strong className="text-amber-700">Pending</strong></div>
+                <div className="grid grid-cols-2 gap-2 text-[11px] pt-1 text-[#78726D]">
+                  <div>Stage: <strong className="text-[#1A1817]">Grinding</strong></div>
+                  <div>Operator: <strong className="text-[#1A1817]">Ramesh</strong></div>
+                  <div>Wastage: <strong className="text-[#8C6512]">2.4%</strong></div>
+                  <div>Quality: <strong className="text-[#8C6512]">Pending</strong></div>
                 </div>
                 <button
                   onClick={() => {
                     setTraceBatchId(o.batch?.batchNumber || 'KAY-2026-0001');
                     setActiveTab('batches');
                   }}
-                  className="w-full py-1.5 bg-ayurveda-700 text-white font-bold rounded-lg text-xs hover:bg-ayurveda-800 cursor-pointer"
+                  className="w-full py-2 bg-[#1A1817] hover:bg-[#2E2927] text-white font-bold rounded-xl text-xs cursor-pointer shadow-xs transition-all"
                 >
                   Open Batch
                 </button>
@@ -778,14 +880,17 @@ export default function ProductionPage() {
           </div>
         )}
       </div>
+      )}
 
       {/* 2-COLUMN OPERATIONAL ROW 2: TIMELINE vs ALERTS */}
+      {(activeTab === 'all' || activeTab === 'analytics') && (
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* LEFT: TODAY'S PRODUCTION TIMELINE */}
-        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 space-y-4">
-          <div className="border-b pb-3">
-            <h3 className="font-bold text-base text-gray-900">TODAY'S PRODUCTION TIMELINE</h3>
-            <p className="text-xs text-gray-500">Real-time stage logs and timestamped operations</p>
+        <div className="bg-white rounded-2xl border border-[#EAE5DC] shadow-[0_1px_3px_rgba(26,24,23,0.02)] p-5 space-y-4">
+          <div className="border-b border-[#EAE5DC] pb-3">
+            <span className="text-[10px] font-bold text-[#6B1D2F] uppercase tracking-wider font-mono">SHOP FLOOR CHRONOLOGY</span>
+            <h3 className="font-bold text-base text-[#1A1817]">TODAY'S PRODUCTION TIMELINE</h3>
+            <p className="text-xs text-[#78726D]">Real-time stage logs and timestamped operations</p>
           </div>
 
           <div className="space-y-3 text-xs">
@@ -796,21 +901,21 @@ export default function ProductionPage() {
               { time: '02:00 PM', batch: 'KAY-2026-0001', stage: 'Filling & Packaging', status: 'UPCOMING' },
               { time: '04:30 PM', batch: 'KAY-2026-0001', stage: 'Final Quality Inspection', status: 'UPCOMING' },
             ].map((t, idx) => (
-              <div key={idx} className="flex items-center justify-between p-2.5 bg-gray-50 rounded-lg border border-gray-200/80">
+              <div key={idx} className="flex items-center justify-between p-2.5 bg-[#FAF8F5] rounded-xl border border-[#EAE5DC]">
                 <div className="flex items-center gap-3">
-                  <span className="font-extrabold text-gray-500 w-16 text-[11px]">{t.time}</span>
+                  <span className="font-extrabold text-[#78726D] w-16 text-[11px] font-mono">{t.time}</span>
                   <div>
-                    <h5 className="font-bold text-gray-900">{t.stage}</h5>
-                    <span className="text-[10px] font-semibold text-gold-700">{t.batch}</span>
+                    <h5 className="font-bold text-[#1A1817]">{t.stage}</h5>
+                    <span className="text-[10px] font-semibold font-mono text-[#5C1D24]">{t.batch}</span>
                   </div>
                 </div>
                 <span
-                  className={`px-2.5 py-0.5 rounded text-[10px] font-extrabold ${
+                  className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${
                     t.status === 'COMPLETED'
-                      ? 'bg-emerald-100 text-emerald-800'
+                      ? 'bg-[#FAF8F5] text-[#5C1D24] border-[#EAE5DC]'
                       : t.status === 'IN_PROGRESS'
-                      ? 'bg-amber-100 text-amber-800'
-                      : 'bg-gray-200 text-gray-700'
+                      ? 'bg-[#FAF6ED] text-[#8C6512] border-[#EAD7B5]'
+                      : 'bg-white text-[#78726D] border-[#EAE5DC]'
                   }`}
                 >
                   {t.status === 'COMPLETED' ? '✓ DONE' : t.status === 'IN_PROGRESS' ? '● IN PROGRESS' : '○ UPCOMING'}
@@ -821,67 +926,71 @@ export default function ProductionPage() {
         </div>
 
         {/* RIGHT: PRODUCTION ALERTS CENTER */}
-        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 space-y-4">
-          <div className="border-b pb-3">
-            <h3 className="font-bold text-base text-gray-900">PRODUCTION ALERTS CENTER</h3>
-            <p className="text-xs text-gray-500">Live operational alerts, delays & quality exceptions</p>
+        <div className="bg-white rounded-2xl border border-[#EAE5DC] shadow-[0_1px_3px_rgba(26,24,23,0.02)] p-5 space-y-4">
+          <div className="border-b border-[#EAE5DC] pb-3">
+            <span className="text-[10px] font-bold text-[#6B1D2F] uppercase tracking-wider font-mono">EXCEPTIONS & NOTIFICATIONS</span>
+            <h3 className="font-bold text-base text-[#1A1817]">PRODUCTION ALERTS CENTER</h3>
+            <p className="text-xs text-[#78726D]">Live operational alerts, delays & quality exceptions</p>
           </div>
 
           <div className="space-y-3 text-xs">
-            <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl space-y-1">
+            <div className="p-3 bg-[#FEF2F2] border border-[#DC2626] rounded-xl space-y-1">
               <div className="flex items-center justify-between">
-                <span className="font-extrabold text-rose-900 flex items-center gap-1.5">
-                  <AlertTriangle className="w-4 h-4 text-rose-600" /> 🔴 Critical: Raw Material Shortage
+                <span className="font-bold text-[#7F1D1D] flex items-center gap-1.5">
+                  <AlertTriangle className="w-4 h-4 text-[#DC2626]" /> Critical: Raw Material Shortage
                 </span>
-                <span className="text-[10px] text-rose-700">10 mins ago</span>
+                <span className="text-[10px] text-[#991B1B] font-mono">10 mins ago</span>
               </div>
-              <p className="text-rose-800 text-[11px]">
+              <p className="text-[#7F1D1D] text-[11px]">
                 Ingredient C shortage (3.0 kg missing) paused batch KAY-2026-0019. PO-2026-0088 expected 29 Sep.
               </p>
             </div>
 
-            <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl space-y-1">
+            <div className="p-3 bg-[#FAF6ED] border border-[#EAD7B5] rounded-xl space-y-1">
               <div className="flex items-center justify-between">
-                <span className="font-extrabold text-amber-900 flex items-center gap-1.5">
-                  <Clock className="w-4 h-4 text-amber-600" /> 🟠 Warning: Stage Delay Alert
+                <span className="font-bold text-[#8C6512] flex items-center gap-1.5">
+                  <Clock className="w-4 h-4 text-[#8C6512]" /> Warning: Stage Delay Alert
                 </span>
-                <span className="text-[10px] text-amber-700">35 mins ago</span>
+                <span className="text-[10px] text-[#8C6512] font-mono">35 mins ago</span>
               </div>
-              <p className="text-amber-800 text-[11px]">
+              <p className="text-[#5A544F] text-[11px]">
                 Mixing stage for PO-PROD-2026-004 running 20 mins past target completion window.
               </p>
             </div>
 
-            <div className="p-3 bg-blue-50 border border-blue-200 rounded-xl space-y-1">
+            <div className="p-3 bg-[#FAF8F5] border border-[#EAE5DC] rounded-xl space-y-1">
               <div className="flex items-center justify-between">
-                <span className="font-extrabold text-blue-900 flex items-center gap-1.5">
-                  <ShieldCheck className="w-4 h-4 text-blue-600" /> 🟡 Attention: Quality Check Pending
+                <span className="font-bold text-[#1A1817] flex items-center gap-1.5">
+                  <ShieldCheck className="w-4 h-4 text-[#5C1D24]" /> Attention: Quality Check Pending
                 </span>
-                <span className="text-[10px] text-blue-700">1 hour ago</span>
+                <span className="text-[10px] text-[#78726D] font-mono">1 hour ago</span>
               </div>
-              <p className="text-blue-800 text-[11px]">
+              <p className="text-[#5A544F] text-[11px]">
                 Batch KAY-2026-0001 completed packaging. Awaiting Dr. Sharma's QC clearance.
               </p>
             </div>
           </div>
         </div>
       </div>
+      )}
 
       {/* PRODUCTION SCHEDULE (CALENDAR / TIMELINE TABS) */}
-      <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b pb-4">
+      {(activeTab === 'all' || activeTab === 'analytics') && (
+      <div className="bg-white rounded-2xl border border-[#EAE5DC] shadow-[0_1px_3px_rgba(26,24,23,0.02)] p-6 space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#EAE5DC] pb-4">
           <div>
-            <h3 className="font-bold text-base text-gray-900">PRODUCTION SCHEDULE</h3>
-            <p className="text-xs text-gray-500">Upcoming manufacturing runs organized by time windows</p>
+            <span className="text-[10px] font-bold text-[#6B1D2F] uppercase tracking-wider font-mono">DISPATCH & LINE PLANNING</span>
+            <h3 className="font-bold text-base text-[#1A1817]">PRODUCTION SCHEDULE</h3>
+            <p className="text-xs text-[#78726D]">Upcoming manufacturing runs organized by time windows</p>
           </div>
 
-          <div className="flex items-center gap-2 bg-gray-100 p-1 rounded-lg">
+          <div className="flex items-center gap-2 bg-[#FAF8F5] p-1 rounded-xl border border-[#EAE5DC]">
             {(['today', 'week', 'month'] as const).map((t) => (
               <button
                 key={t}
                 onClick={() => setScheduleTab(t)}
-                className={`px-3 py-1 rounded-md text-xs font-bold capitalize cursor-pointer ${
-                  scheduleTab === t ? 'bg-white text-ayurveda-900 shadow-xs' : 'text-gray-600'
+                className={`px-3 py-1 rounded-lg text-xs font-bold capitalize cursor-pointer transition-all ${
+                  scheduleTab === t ? 'bg-white text-[#1A1817] shadow-2xs' : 'text-[#78726D]'
                 }`}
               >
                 {t === 'today' ? 'Today' : t === 'week' ? 'This Week' : 'This Month'}
@@ -891,103 +1000,111 @@ export default function ProductionPage() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          <div className="p-4 bg-gray-50 rounded-xl border border-gray-200 space-y-2 text-xs">
-            <div className="flex justify-between items-center text-[10px] font-bold text-ayurveda-700">
+          <div className="p-4 bg-[#FAF8F5] rounded-2xl border border-[#EAE5DC] space-y-2 text-xs">
+            <div className="flex justify-between items-center text-[10px] font-bold text-[#5C1D24] font-mono">
               <span>10:00 AM • LINE_1</span>
-              <span className="px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded">READY</span>
+              <span className="px-2 py-0.5 bg-white border border-[#EAE5DC] text-[#5C1D24] rounded-full">READY</span>
             </div>
-            <h4 className="font-extrabold text-sm text-gray-900">Kayam Churna (500 Units)</h4>
-            <p className="text-gray-500">Supervisor: Ramesh | Priority: HIGH</p>
+            <h4 className="font-bold text-sm text-[#1A1817]">Kayam Churna (500 Units)</h4>
+            <p className="text-[#78726D]">Supervisor: Ramesh | Priority: HIGH</p>
           </div>
 
-          <div className="p-4 bg-gray-50 rounded-xl border border-gray-200 space-y-2 text-xs">
-            <div className="flex justify-between items-center text-[10px] font-bold text-ayurveda-700">
+          <div className="p-4 bg-[#FAF8F5] rounded-2xl border border-[#EAE5DC] space-y-2 text-xs">
+            <div className="flex justify-between items-center text-[10px] font-bold text-[#5C1D24] font-mono">
               <span>02:00 PM • LINE_2</span>
-              <span className="px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded">READY</span>
+              <span className="px-2 py-0.5 bg-white border border-[#EAE5DC] text-[#5C1D24] rounded-full">READY</span>
             </div>
-            <h4 className="font-extrabold text-sm text-gray-900">Ayurvedic Cough Syrup (300 Bottles)</h4>
-            <p className="text-gray-500">Supervisor: Suresh | Priority: NORMAL</p>
+            <h4 className="font-bold text-sm text-[#1A1817]">Ayurvedic Cough Syrup (300 Bottles)</h4>
+            <p className="text-[#78726D]">Supervisor: Suresh | Priority: NORMAL</p>
           </div>
 
-          <div className="p-4 bg-gray-50 rounded-xl border border-gray-200 space-y-2 text-xs">
-            <div className="flex justify-between items-center text-[10px] font-bold text-ayurveda-700">
+          <div className="p-4 bg-[#FAF8F5] rounded-2xl border border-[#EAE5DC] space-y-2 text-xs">
+            <div className="flex justify-between items-center text-[10px] font-bold text-[#8C6512] font-mono">
               <span>04:30 PM • LINE_3</span>
-              <span className="px-2 py-0.5 bg-amber-100 text-amber-800 rounded">PENDING RM</span>
+              <span className="px-2 py-0.5 bg-[#FAF6ED] border border-[#EAD7B5] text-[#8C6512] rounded-full">PENDING RM</span>
             </div>
-            <h4 className="font-extrabold text-sm text-gray-900">Neem Soap (1,000 Bars)</h4>
-            <p className="text-gray-500">Supervisor: Mahesh | Priority: NORMAL</p>
+            <h4 className="font-bold text-sm text-[#1A1817]">Neem Soap (1,000 Bars)</h4>
+            <p className="text-[#78726D]">Supervisor: Mahesh | Priority: NORMAL</p>
           </div>
         </div>
       </div>
+      )}
 
       {/* 2-COLUMN ANALYTICS SECTION */}
+      {(activeTab === 'all' || activeTab === 'analytics') && (
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* LEFT: PRODUCTION TREND */}
-        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 space-y-4">
-          <div className="border-b pb-3">
-            <h3 className="font-bold text-base text-gray-900">PRODUCTION TREND</h3>
-            <p className="text-xs text-gray-500">Daily finished units manufactured across lines</p>
+        <div className="bg-white rounded-2xl border border-[#EAE5DC] shadow-[0_1px_3px_rgba(26,24,23,0.02)] p-5 space-y-4">
+          <div className="border-b border-[#EAE5DC] pb-3">
+            <span className="text-[10px] font-bold text-[#6B1D2F] uppercase tracking-wider font-mono">OUTPUT METRICS</span>
+            <h3 className="font-bold text-base text-[#1A1817]">PRODUCTION TREND</h3>
+            <p className="text-xs text-[#78726D]">Daily finished units manufactured across lines</p>
           </div>
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={trendData}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                <XAxis dataKey="date" tick={{ fontSize: 10 }} />
-                <YAxis tick={{ fontSize: 10 }} />
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#EAE5DC" />
+                <XAxis dataKey="date" tick={{ fontSize: 10, fill: '#78726D' }} />
+                <YAxis tick={{ fontSize: 10, fill: '#78726D' }} />
                 <Tooltip />
-                <Area type="monotone" dataKey="units" stroke="#1b4332" fill="#2d6a4f" fillOpacity={0.2} strokeWidth={2} />
+                <Area type="monotone" dataKey="units" stroke="#5C1D24" fill="#5C1D24" fillOpacity={0.15} strokeWidth={2} />
               </AreaChart>
             </ResponsiveContainer>
           </div>
         </div>
 
         {/* RIGHT: PRODUCT-WISE PRODUCTION */}
-        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 space-y-4">
-          <div className="border-b pb-3">
-            <h3 className="font-bold text-base text-gray-900">PRODUCTION BY PRODUCT</h3>
-            <p className="text-xs text-gray-500">Units manufactured by Ayurvedic product category</p>
+        <div className="bg-white rounded-2xl border border-[#EAE5DC] shadow-[0_1px_3px_rgba(26,24,23,0.02)] p-5 space-y-4">
+          <div className="border-b border-[#EAE5DC] pb-3">
+            <span className="text-[10px] font-bold text-[#6B1D2F] uppercase tracking-wider font-mono">PRODUCT BREAKDOWN</span>
+            <h3 className="font-bold text-base text-[#1A1817]">PRODUCTION BY PRODUCT</h3>
+            <p className="text-xs text-[#78726D]">Units manufactured by Ayurvedic product category</p>
           </div>
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={productData}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                <XAxis dataKey="name" tick={{ fontSize: 10 }} />
-                <YAxis tick={{ fontSize: 10 }} />
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#EAE5DC" />
+                <XAxis dataKey="name" tick={{ fontSize: 10, fill: '#78726D' }} />
+                <YAxis tick={{ fontSize: 10, fill: '#78726D' }} />
                 <Tooltip />
-                <Bar dataKey="units" fill="#1b4332" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="units" fill="#5C1D24" radius={[6, 6, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
         </div>
       </div>
+      )}
 
       {/* YIELD VS WASTAGE ANALYTICS */}
+      {(activeTab === 'all' || activeTab === 'analytics') && (
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* LEFT: EXPECTED VS ACTUAL YIELD */}
-        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 space-y-4">
-          <div className="border-b pb-3">
-            <h3 className="font-bold text-base text-gray-900">EXPECTED VS ACTUAL YIELD</h3>
-            <p className="text-xs text-gray-500">Comparison against configured BOM standards (%)</p>
+        <div className="bg-white rounded-2xl border border-[#EAE5DC] shadow-[0_1px_3px_rgba(26,24,23,0.02)] p-5 space-y-4">
+          <div className="border-b border-[#EAE5DC] pb-3">
+            <span className="text-[10px] font-bold text-[#6B1D2F] uppercase tracking-wider font-mono">QUALITY BENCHMARK</span>
+            <h3 className="font-bold text-base text-[#1A1817]">EXPECTED VS ACTUAL YIELD</h3>
+            <p className="text-xs text-[#78726D]">Comparison against configured BOM standards (%)</p>
           </div>
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={yieldData}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                <XAxis dataKey="name" tick={{ fontSize: 10 }} />
-                <YAxis tick={{ fontSize: 10 }} domain={[90, 100]} />
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#EAE5DC" />
+                <XAxis dataKey="name" tick={{ fontSize: 10, fill: '#78726D' }} />
+                <YAxis tick={{ fontSize: 10, fill: '#78726D' }} domain={[90, 100]} />
                 <Tooltip />
-                <Bar dataKey="expected" fill="#94a3b8" name="Expected Yield %" />
-                <Bar dataKey="actual" fill="#1b4332" name="Actual Yield %" />
+                <Bar dataKey="expected" fill="#B8944D" name="Expected Yield %" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="actual" fill="#5C1D24" name="Actual Yield %" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
         </div>
 
         {/* RIGHT: WASTAGE BY PRODUCTION STAGE */}
-        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 space-y-4">
-          <div className="border-b pb-3">
-            <h3 className="font-bold text-base text-gray-900">WASTAGE BY PRODUCTION STAGE</h3>
-            <p className="text-xs text-gray-500">Stage breakdown against 3.0% allowed tolerance</p>
+        <div className="bg-white rounded-2xl border border-[#EAE5DC] shadow-[0_1px_3px_rgba(26,24,23,0.02)] p-5 space-y-4">
+          <div className="border-b border-[#EAE5DC] pb-3">
+            <span className="text-[10px] font-bold text-[#6B1D2F] uppercase tracking-wider font-mono">PROCESS CONTROL</span>
+            <h3 className="font-bold text-base text-[#1A1817]">WASTAGE BY PRODUCTION STAGE</h3>
+            <p className="text-xs text-[#78726D]">Stage breakdown against 3.0% allowed tolerance</p>
           </div>
           <div className="space-y-3 text-xs">
             {[
@@ -997,11 +1114,11 @@ export default function ProductionPage() {
               { stage: 'Filling & Bottling', waste: '1.5%', status: 'NORMAL' },
               { stage: 'Packaging & Sealing', waste: '0.9%', status: 'NORMAL' },
             ].map((stg) => (
-              <div key={stg.stage} className="flex items-center justify-between p-2.5 bg-gray-50 rounded-lg border border-gray-200">
-                <span className="font-bold text-gray-900">{stg.stage}</span>
+              <div key={stg.stage} className="flex items-center justify-between p-2.5 bg-[#FAF8F5] rounded-xl border border-[#EAE5DC]">
+                <span className="font-bold text-[#1A1817]">{stg.stage}</span>
                 <div className="flex items-center gap-3">
-                  <span className="font-black text-gray-900">{stg.waste}</span>
-                  <span className="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 text-[10px] font-extrabold">
+                  <span className="font-bold font-mono text-[#1A1817]">{stg.waste}</span>
+                  <span className="px-2.5 py-0.5 rounded-full bg-white text-[#5C1D24] border border-[#EAE5DC] text-[10px] font-bold">
                     ✓ {stg.status}
                   </span>
                 </div>
@@ -1010,25 +1127,28 @@ export default function ProductionPage() {
           </div>
         </div>
       </div>
+      )}
 
       {/* QUALITY CONTROL QUEUE */}
-      <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b pb-4">
+      {(activeTab === 'all' || activeTab === 'quality') && (
+      <div className="bg-white rounded-2xl border border-[#EAE5DC] shadow-[0_1px_3px_rgba(26,24,23,0.02)] p-6 space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#EAE5DC] pb-4">
           <div>
-            <h3 className="font-bold text-base text-gray-900">QUALITY CONTROL QUEUE</h3>
-            <p className="text-xs text-gray-500">Batches awaiting inspection before finished stock release</p>
+            <span className="text-[10px] font-bold text-[#6B1D2F] uppercase tracking-wider font-mono">INSPECTION GATEWAY</span>
+            <h3 className="font-bold text-base text-[#1A1817]">QUALITY CONTROL QUEUE</h3>
+            <p className="text-xs text-[#78726D]">Batches awaiting inspection before finished stock release</p>
           </div>
 
-          <div className="flex items-center gap-3 text-xs font-extrabold">
-            <span className="px-3 py-1 bg-amber-100 text-amber-900 rounded-full">Pending: 4</span>
-            <span className="px-3 py-1 bg-emerald-100 text-emerald-900 rounded-full">Passed: 12</span>
-            <span className="px-3 py-1 bg-rose-100 text-rose-900 rounded-full">Failed: 1</span>
+          <div className="flex items-center gap-3 text-xs font-mono font-bold">
+            <span className="px-3 py-1 bg-[#FAF6ED] text-[#8C6512] border border-[#EAD7B5] rounded-full">Pending: 4</span>
+            <span className="px-3 py-1 bg-[#FAF8F5] text-[#5C1D24] border border-[#EAE5DC] rounded-full">Passed: 12</span>
+            <span className="px-3 py-1 bg-[#FEF2F2] text-[#DC2626] border border-[#DC2626] rounded-full">Failed: 1</span>
           </div>
         </div>
 
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
-            <thead className="bg-gray-50 text-gray-700 font-bold uppercase text-[10px] tracking-wider border-b">
+            <thead className="bg-[#FAF8F5] text-[#78726D] font-semibold uppercase text-[10px] tracking-wider border-b border-[#EAE5DC] font-mono">
               <tr>
                 <th className="p-3">Batch</th>
                 <th className="p-3">Product</th>
@@ -1039,22 +1159,22 @@ export default function ProductionPage() {
                 <th className="p-3 text-right">Action</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200">
-              <tr className="hover:bg-gray-50">
-                <td className="p-3 font-extrabold text-gold-700">KAY-2026-0001</td>
-                <td className="p-3 font-bold text-gray-900">Kayam Churna</td>
-                <td className="p-3 font-semibold">500 Units</td>
+            <tbody className="divide-y divide-[#EAE5DC]">
+              <tr className="hover:bg-[#FAF8F5] transition-colors">
+                <td className="p-3 font-mono font-bold text-[#5C1D24]">KAY-2026-0001</td>
+                <td className="p-3 font-semibold text-[#1A1817]">Kayam Churna</td>
+                <td className="p-3 font-semibold text-[#1A1817]">500 Units</td>
                 <td className="p-3">
-                  <span className="px-2.5 py-0.5 rounded bg-amber-100 text-amber-800 font-extrabold text-[10px]">
+                  <span className="px-2.5 py-0.5 rounded-full bg-[#FAF6ED] text-[#8C6512] border border-[#EAD7B5] font-bold text-[10px]">
                     PENDING
                   </span>
                 </td>
-                <td className="p-3 text-gray-600 font-medium">Dr. Sharma (QC Lead)</td>
-                <td className="p-3 text-gray-500">Today 14:30</td>
+                <td className="p-3 text-[#5A544F]">Dr. Sharma (QC Lead)</td>
+                <td className="p-3 text-[#78726D]">Today 14:30</td>
                 <td className="p-3 text-right">
                   <button
                     onClick={() => setShowQCModal('KAY-2026-0001')}
-                    className="px-3 py-1 bg-blue-600 text-white font-bold text-xs rounded-lg hover:bg-blue-700 cursor-pointer"
+                    className="px-3 py-1.5 bg-[#5C1D24] hover:bg-[#4A151C] text-white font-bold text-xs rounded-xl shadow-xs cursor-pointer transition-all"
                   >
                     Perform QC
                   </button>
@@ -1064,17 +1184,20 @@ export default function ProductionPage() {
           </table>
         </div>
       </div>
+      )}
 
       {/* RECENT FINISHED GOODS OUTPUT */}
-      <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 space-y-4">
-        <div className="border-b pb-4">
-          <h3 className="font-bold text-base text-gray-900">RECENT FINISHED GOODS OUTPUT</h3>
-          <p className="text-xs text-gray-500">Only QC-approved quantities are released to sellable inventory</p>
+      {(activeTab === 'all' || activeTab === 'quality') && (
+      <div className="bg-white rounded-2xl border border-[#EAE5DC] shadow-[0_1px_3px_rgba(26,24,23,0.02)] p-6 space-y-4">
+        <div className="border-b border-[#EAE5DC] pb-4">
+          <span className="text-[10px] font-bold text-[#6B1D2F] uppercase tracking-wider font-mono">WAREHOUSE RELEASE</span>
+          <h3 className="font-bold text-base text-[#1A1817]">RECENT FINISHED GOODS OUTPUT</h3>
+          <p className="text-xs text-[#78726D]">Only QC-approved quantities are released to sellable inventory</p>
         </div>
 
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
-            <thead className="bg-gray-50 text-gray-700 font-bold uppercase text-[10px] tracking-wider border-b">
+            <thead className="bg-[#FAF8F5] text-[#78726D] font-semibold uppercase text-[10px] tracking-wider border-b border-[#EAE5DC] font-mono">
               <tr>
                 <th className="p-3">Batch</th>
                 <th className="p-3">Product</th>
@@ -1087,46 +1210,47 @@ export default function ProductionPage() {
                 <th className="p-3">Released Stock</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200">
-              <tr className="hover:bg-gray-50">
-                <td className="p-3 font-extrabold text-gold-700">KAY-2026-0001</td>
-                <td className="p-3 font-bold text-gray-900">Kayam Churna</td>
-                <td className="p-3 font-semibold">500</td>
-                <td className="p-3 font-semibold">485</td>
-                <td className="p-3 font-extrabold text-emerald-700">480</td>
-                <td className="p-3 font-extrabold text-rose-700">5</td>
-                <td className="p-3 font-black text-gray-900">97%</td>
+            <tbody className="divide-y divide-[#EAE5DC]">
+              <tr className="hover:bg-[#FAF8F5] transition-colors">
+                <td className="p-3 font-mono font-bold text-[#5C1D24]">KAY-2026-0001</td>
+                <td className="p-3 font-semibold text-[#1A1817]">Kayam Churna</td>
+                <td className="p-3 text-[#1A1817]">500</td>
+                <td className="p-3 text-[#1A1817]">485</td>
+                <td className="p-3 font-bold text-[#5C1D24]">480</td>
+                <td className="p-3 font-bold text-[#DC2626]">5</td>
+                <td className="p-3 font-bold text-[#1A1817]">97%</td>
                 <td className="p-3">
-                  <span className="px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded font-bold text-[10px]">
+                  <span className="px-2.5 py-0.5 bg-[#FAF8F5] text-[#5C1D24] border border-[#EAE5DC] rounded-full font-bold text-[10px]">
                     PASSED
                   </span>
                 </td>
-                <td className="p-3 font-extrabold text-emerald-700">+480 Units</td>
+                <td className="p-3 font-bold text-[#5C1D24]">+480 Units</td>
               </tr>
             </tbody>
           </table>
         </div>
       </div>
+      )}
 
       {/* MODAL: SCHEDULE PRODUCTION ORDER */}
       {showOrderModal && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
-            <div className="flex justify-between items-center border-b pb-3">
-              <h3 className="text-base font-bold text-gray-900">Schedule Production Batch</h3>
-              <button onClick={() => setShowOrderModal(false)} className="text-gray-400 hover:text-gray-600">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4 border border-[#EAE5DC]">
+            <div className="flex justify-between items-center border-b border-[#EAE5DC] pb-3">
+              <h3 className="text-base font-bold text-[#1A1817]">Schedule Production Batch</h3>
+              <button onClick={() => setShowOrderModal(false)} className="text-[#8C857E] hover:text-[#1A1817] cursor-pointer">
                 ✕
               </button>
             </div>
 
             <form onSubmit={handleCreateOrder} className="space-y-3 text-xs">
               <div>
-                <label className="block font-bold text-gray-700 mb-1">Select Product</label>
+                <label className="block font-bold text-[#78726D] mb-1">Select Product</label>
                 <select
                   required
                   value={selectedProduct}
                   onChange={(e) => setSelectedProduct(e.target.value)}
-                  className="w-full p-2.5 border border-gray-200 rounded-xl bg-gray-50 font-semibold"
+                  className="w-full p-2.5 border border-[#EAE5DC] rounded-xl bg-[#FAF8F5] font-semibold text-[#1A1817]"
                 >
                   <option value="">-- Choose Product --</option>
                   {products.map((p: any) => (
@@ -1138,13 +1262,13 @@ export default function ProductionPage() {
               </div>
 
               <div>
-                <label className="block font-bold text-gray-700 mb-1">Planned Quantity (Units)</label>
+                <label className="block font-bold text-[#78726D] mb-1">Planned Quantity (Units)</label>
                 <input
                   type="number"
                   required
                   value={plannedQty}
                   onChange={(e) => setPlannedQty(Number(e.target.value))}
-                  className="w-full p-2.5 border border-gray-200 rounded-xl bg-gray-50 font-bold"
+                  className="w-full p-2.5 border border-[#EAE5DC] rounded-xl bg-[#FAF8F5] font-bold text-[#1A1817]"
                 />
               </div>
 
@@ -1152,14 +1276,14 @@ export default function ProductionPage() {
                 <button
                   type="button"
                   onClick={() => setShowOrderModal(false)}
-                  className="flex-1 py-2.5 border border-gray-200 rounded-xl font-bold text-gray-600 cursor-pointer"
+                  className="flex-1 py-2.5 border border-[#EAE5DC] rounded-xl font-bold text-[#5A544F] hover:bg-[#FAF8F5] cursor-pointer transition-all"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={createOrderMutation.isPending}
-                  className="flex-1 py-2.5 bg-ayurveda-700 hover:bg-ayurveda-800 text-white font-bold rounded-xl cursor-pointer"
+                  className="flex-1 py-2.5 bg-[#1A1817] hover:bg-[#2E2927] text-white font-bold rounded-xl cursor-pointer transition-all shadow-xs"
                 >
                   {createOrderMutation.isPending ? 'Scheduling...' : 'Schedule Order'}
                 </button>
@@ -1172,8 +1296,8 @@ export default function ProductionPage() {
       {/* MODAL: RECORD WASTAGE */}
       {showWasteModal && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
-            <h3 className="text-base font-bold text-gray-900">Record Stage Wastage</h3>
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4 border border-[#EAE5DC]">
+            <h3 className="text-base font-bold text-[#1A1817]">Record Stage Wastage</h3>
             <form
               onSubmit={(e) => {
                 e.preventDefault();
@@ -1185,8 +1309,8 @@ export default function ProductionPage() {
               className="space-y-3 text-xs"
             >
               <div>
-                <label className="block font-bold text-gray-700 mb-1">Stage</label>
-                <select value={wasteStage} onChange={(e) => setWasteStage(e.target.value)} className="w-full p-2.5 border border-gray-200 rounded-xl bg-gray-50 font-semibold">
+                <label className="block font-bold text-[#78726D] mb-1">Stage</label>
+                <select value={wasteStage} onChange={(e) => setWasteStage(e.target.value)} className="w-full p-2.5 border border-[#EAE5DC] rounded-xl bg-[#FAF8F5] font-semibold text-[#1A1817]">
                   {['Cleaning', 'Grinding', 'Drying', 'Mixing', 'Processing', 'Packaging'].map((s) => (
                     <option key={s} value={s}>{s}</option>
                   ))}
@@ -1194,17 +1318,17 @@ export default function ProductionPage() {
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block font-bold text-gray-700 mb-1">Input (kg)</label>
-                  <input type="number" value={inputQty} onChange={(e) => setInputQty(Number(e.target.value))} className="w-full p-2.5 border border-gray-200 rounded-xl bg-gray-50" />
+                  <label className="block font-bold text-[#78726D] mb-1">Input (kg)</label>
+                  <input type="number" value={inputQty} onChange={(e) => setInputQty(Number(e.target.value))} className="w-full p-2.5 border border-[#EAE5DC] rounded-xl bg-[#FAF8F5] text-[#1A1817]" />
                 </div>
                 <div>
-                  <label className="block font-bold text-gray-700 mb-1">Output (kg)</label>
-                  <input type="number" value={outputQty} onChange={(e) => setOutputQty(Number(e.target.value))} className="w-full p-2.5 border border-gray-200 rounded-xl bg-gray-50" />
+                  <label className="block font-bold text-[#78726D] mb-1">Output (kg)</label>
+                  <input type="number" value={outputQty} onChange={(e) => setOutputQty(Number(e.target.value))} className="w-full p-2.5 border border-[#EAE5DC] rounded-xl bg-[#FAF8F5] text-[#1A1817]" />
                 </div>
               </div>
               <div className="flex gap-2 pt-2">
-                <button type="button" onClick={() => setShowWasteModal(null)} className="flex-1 py-2.5 border border-gray-200 rounded-xl font-bold text-gray-600">Cancel</button>
-                <button type="submit" className="flex-1 py-2.5 bg-amber-600 text-white font-bold rounded-xl cursor-pointer">Save Wastage</button>
+                <button type="button" onClick={() => setShowWasteModal(null)} className="flex-1 py-2.5 border border-[#EAE5DC] rounded-xl font-bold text-[#5A544F]">Cancel</button>
+                <button type="submit" className="flex-1 py-2.5 bg-[#5C1D24] text-white font-bold rounded-xl cursor-pointer">Save Wastage</button>
               </div>
             </form>
           </div>
@@ -1214,8 +1338,8 @@ export default function ProductionPage() {
       {/* MODAL: QUALITY CHECK */}
       {showQCModal && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
-            <h3 className="text-base font-bold text-gray-900">Record Quality Inspection</h3>
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4 border border-[#EAE5DC]">
+            <h3 className="text-base font-bold text-[#1A1817]">Record Quality Inspection</h3>
             <form
               onSubmit={(e) => {
                 e.preventDefault();
@@ -1227,20 +1351,20 @@ export default function ProductionPage() {
               className="space-y-3 text-xs"
             >
               <div>
-                <label className="block font-bold text-gray-700 mb-1">Inspector Name</label>
-                <input type="text" value={inspectorName} onChange={(e) => setInspectorName(e.target.value)} className="w-full p-2.5 border border-gray-200 rounded-xl bg-gray-50 font-semibold" />
+                <label className="block font-bold text-[#78726D] mb-1">Inspector Name</label>
+                <input type="text" value={inspectorName} onChange={(e) => setInspectorName(e.target.value)} className="w-full p-2.5 border border-[#EAE5DC] rounded-xl bg-[#FAF8F5] font-semibold text-[#1A1817]" />
               </div>
               <div>
-                <label className="block font-bold text-gray-700 mb-1">Result</label>
-                <select value={qcResult} onChange={(e) => setQcResult(e.target.value)} className="w-full p-2.5 border border-gray-200 rounded-xl bg-gray-50 font-bold">
+                <label className="block font-bold text-[#78726D] mb-1">Result</label>
+                <select value={qcResult} onChange={(e) => setQcResult(e.target.value)} className="w-full p-2.5 border border-[#EAE5DC] rounded-xl bg-[#FAF8F5] font-bold text-[#1A1817]">
                   <option value="PASSED">PASSED (Release for Finished Goods)</option>
                   <option value="REJECTED">REJECTED (Do not add to sellable stock)</option>
                   <option value="CONDITIONAL">HOLD / CONDITIONAL REVIEW</option>
                 </select>
               </div>
               <div className="flex gap-2 pt-2">
-                <button type="button" onClick={() => setShowQCModal(null)} className="flex-1 py-2.5 border border-gray-200 rounded-xl font-bold text-gray-600">Cancel</button>
-                <button type="submit" className="flex-1 py-2.5 bg-blue-600 text-white font-bold rounded-xl cursor-pointer">Submit Inspection</button>
+                <button type="button" onClick={() => setShowQCModal(null)} className="flex-1 py-2.5 border border-[#EAE5DC] rounded-xl font-bold text-[#5A544F]">Cancel</button>
+                <button type="submit" className="flex-1 py-2.5 bg-[#1A1817] text-white font-bold rounded-xl cursor-pointer">Submit Inspection</button>
               </div>
             </form>
           </div>

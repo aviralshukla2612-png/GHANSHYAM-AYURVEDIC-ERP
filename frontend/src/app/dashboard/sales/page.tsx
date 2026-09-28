@@ -96,50 +96,50 @@ export default function SalesDashboardPage() {
   ];
 
   const pieData = [
-    { name: 'B2B Sales', value: salesData.b2bSales || 920000, color: '#1b4332' },
-    { name: 'B2C Sales', value: salesData.b2cSales || 315000, color: '#2d6a4f' },
-    { name: 'Distributors', value: salesData.distributorSales || 221000, color: '#d4af37' },
+    { name: 'B2B Sales', value: salesData.b2bSales || 819840.4, color: '#1A1817' },
+    { name: 'B2C Sales', value: salesData.b2cSales || 315000, color: '#5C1D24' },
+    { name: 'Distributors', value: salesData.distributorSales || 221000, color: '#B8944D' },
   ];
 
   return (
     <div className="space-y-6">
       {/* POP-UP MODAL ALERT: PRODUCT READY FOR DELIVERY */}
       {readyOrders.length > 0 && showReadyModal && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fade-in">
-          <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl space-y-4 border-2 border-emerald-500">
-            <div className="flex justify-between items-center border-b pb-3">
-              <span className="px-3 py-1 rounded-full bg-emerald-100 text-emerald-900 font-black text-xs uppercase tracking-wider flex items-center gap-1.5">
-                <CheckCircle2 className="w-4 h-4 text-emerald-600" /> Stock Available & Ready for Delivery
+        <div className="fixed inset-0 bg-[#1A1817]/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fade-in">
+          <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl space-y-4 border border-[#EAE5DC]">
+            <div className="flex justify-between items-center border-b border-[#EAE5DC] pb-3">
+              <span className="px-3 py-1 rounded-full bg-[#FAF8F5] text-[#5C1D24] border border-[#EAE5DC] font-bold text-xs uppercase tracking-wider flex items-center gap-1.5 font-mono">
+                <CheckCircle2 className="w-4 h-4 text-[#5C1D24]" /> Stock Available & Ready for Delivery
               </span>
-              <button onClick={() => setShowReadyModal(false)} className="text-gray-400 hover:text-gray-600 font-bold text-lg">
+              <button onClick={() => setShowReadyModal(false)} className="text-[#8C857E] hover:text-[#1A1817] font-bold text-lg cursor-pointer">
                 ✕
               </button>
             </div>
 
             <div className="space-y-2">
-              <h3 className="text-lg font-black text-gray-900">
-                🎉 Production Completed & Stock Accepted into Store!
+              <h3 className="text-lg font-bold text-[#1A1817]">
+                Production Completed & Stock Accepted into Store
               </h3>
-              <p className="text-xs text-gray-600 leading-relaxed">
+              <p className="text-xs text-[#78726D] leading-relaxed">
                 Stock Manager has accepted the finished batch into store. The following sales order is ready for dispatch:
               </p>
 
-              <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl space-y-2 font-mono text-xs text-emerald-950">
+              <div className="p-4 bg-[#FAF8F5] border border-[#EAE5DC] rounded-2xl space-y-2 font-mono text-xs text-[#1A1817]">
                 <div className="flex justify-between font-bold">
-                  <span>Order Number:</span>
-                  <span className="text-ayurveda-900">{readyOrders[0].orderNumber}</span>
+                  <span className="text-[#78726D]">Order Number:</span>
+                  <span className="text-[#5C1D24]">{readyOrders[0].orderNumber}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span>Customer Name:</span>
-                  <span className="font-bold">{readyOrders[0].customer?.name || 'M/S Shreeji Herbals'}</span>
+                  <span className="text-[#78726D]">Customer Name:</span>
+                  <span className="font-bold text-[#1A1817]">{readyOrders[0].customer?.name || 'M/S Shreeji Herbals'}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span>Total Order Amount:</span>
-                  <span className="font-bold text-emerald-800">₹{readyOrders[0].totalAmount?.toLocaleString('en-IN')}</span>
+                  <span className="text-[#78726D]">Total Order Amount:</span>
+                  <span className="font-bold text-[#1A1817]">₹{readyOrders[0].totalAmount?.toLocaleString('en-IN')}</span>
                 </div>
-                <div className="flex justify-between items-center pt-1 border-t border-emerald-200 text-[11px]">
-                  <span>Fulfillment Status:</span>
-                  <span className="px-2 py-0.5 rounded bg-emerald-700 text-white font-black">READY_FOR_DISPATCH</span>
+                <div className="flex justify-between items-center pt-2 border-t border-[#EAE5DC] text-[11px]">
+                  <span className="text-[#78726D]">Fulfillment Status:</span>
+                  <span className="px-2 py-0.5 rounded-full bg-[#FAF8F5] text-[#5C1D24] border border-[#EAE5DC] font-bold">READY_FOR_DISPATCH</span>
                 </div>
               </div>
             </div>
@@ -148,15 +148,15 @@ export default function SalesDashboardPage() {
               <button
                 type="button"
                 onClick={() => setShowReadyModal(false)}
-                className="flex-1 py-2.5 border border-gray-200 rounded-xl font-bold text-xs text-gray-600 hover:bg-gray-50 cursor-pointer"
+                className="flex-1 py-2.5 border border-[#EAE5DC] bg-white rounded-xl font-bold text-xs text-[#5A544F] hover:bg-[#FAF8F5] cursor-pointer transition-all"
               >
                 Dismiss Alert
               </button>
               <Link
                 href="/dashboard/dispatch"
-                className="flex-1 py-2.5 bg-gradient-to-r from-emerald-600 to-emerald-700 hover:brightness-110 text-white font-extrabold text-xs rounded-xl flex items-center justify-center gap-1.5 shadow-md cursor-pointer"
+                className="flex-1 py-2.5 bg-[#1A1817] hover:bg-[#2E2927] text-white font-bold text-xs rounded-xl flex items-center justify-center gap-1.5 shadow-xs cursor-pointer transition-all"
               >
-                <Truck className="w-4 h-4" /> Dispatch Order Now →
+                <Truck className="w-4 h-4 text-[#B8944D]" /> Dispatch Order Now →
               </Link>
             </div>
           </div>
@@ -165,35 +165,35 @@ export default function SalesDashboardPage() {
 
       {/* HEADER BANNER FOR READY ORDERS */}
       {readyOrders.length > 0 && (
-        <div className="p-4 bg-gradient-to-r from-emerald-900 to-emerald-800 text-white rounded-2xl shadow-md flex items-center justify-between border border-emerald-700">
-          <div className="flex items-center gap-3 text-xs font-bold">
-            <span className="p-2 rounded-xl bg-white/20 text-white">
+        <div className="p-4 bg-[#1A1817] text-white rounded-2xl shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3 border border-[#EAE5DC]">
+          <div className="flex items-center gap-3 text-xs font-semibold">
+            <span className="p-2.5 rounded-xl bg-white/10 text-[#B8944D]">
               <PackageSearch className="w-5 h-5" />
             </span>
             <div>
-              <p className="font-black text-sm">📦 {readyOrders.length} Order(s) Ready for Delivery!</p>
-              <p className="text-[11px] text-emerald-200 font-normal">
+              <p className="font-bold text-sm text-white">📦 {readyOrders.length} Order(s) Ready for Delivery!</p>
+              <p className="text-[11px] text-[#A39D96]">
                 Stock Manager accepted finished goods for Order {readyOrders[0].orderNumber}.
               </p>
             </div>
           </div>
           <Link
             href="/dashboard/dispatch"
-            className="px-4 py-2 bg-gold-400 hover:bg-gold-500 text-ayurveda-950 font-black text-xs rounded-xl shadow-xs flex items-center gap-1.5 cursor-pointer shrink-0"
+            className="px-4 py-2 bg-[#FAF8F5] hover:bg-[#F2ECE4] text-[#1A1817] font-bold text-xs rounded-xl border border-[#EAE5DC] shadow-xs flex items-center gap-1.5 cursor-pointer shrink-0 transition-all"
           >
-            <Truck className="w-4 h-4" /> Dispatch Now
+            <Truck className="w-4 h-4 text-[#5C1D24]" /> Dispatch Now
           </Link>
         </div>
       )}
 
       {/* Header & Quick Action Buttons */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-gray-200 shadow-sm">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-[#EAE5DC] shadow-[0_1px_3px_rgba(26,24,23,0.02)]">
         <div>
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-ayurveda-100 text-ayurveda-900 text-[11px] font-bold uppercase tracking-wider mb-2">
-            <ShoppingCart className="w-3.5 h-3.5" /> Sales Executive Command Center
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#FAF8F5] text-[#5C1D24] border border-[#EAE5DC] text-[11px] font-bold uppercase tracking-wider mb-2 font-mono">
+            <ShoppingCart className="w-3.5 h-3.5 text-[#5C1D24]" /> Sales Executive Command Center
           </div>
-          <h1 className="text-2xl font-black text-gray-900 tracking-tight">Sales & Procurement Portal</h1>
-          <p className="text-xs text-gray-500 mt-0.5">
+          <h1 className="text-2xl font-bold text-[#1A1817] tracking-tight">Sales & Procurement Portal</h1>
+          <p className="text-xs text-[#78726D] mt-0.5">
             Real-time sales orders, automatic finished stock checks, BOM shortage calculation, and raw-material purchasing.
           </p>
         </div>
@@ -205,105 +205,105 @@ export default function SalesDashboardPage() {
               setOrderResultMsg(null);
               setShowOrderModal(true);
             }}
-            className="px-3.5 py-2.5 bg-ayurveda-700 hover:bg-ayurveda-800 text-white font-bold text-xs rounded-xl shadow-md transition-all flex items-center gap-1.5 cursor-pointer"
+            className="px-3.5 py-2.5 bg-[#1A1817] hover:bg-[#2E2927] text-white font-bold text-xs rounded-xl shadow-xs transition-all flex items-center gap-1.5 cursor-pointer"
           >
-            <Plus className="w-4 h-4 text-gold-400" /> New Sales Order
+            <Plus className="w-4 h-4 text-[#B8944D]" /> New Sales Order
           </button>
 
           <Link
             href="/dashboard/sales/customers"
-            className="px-3.5 py-2.5 bg-white border border-gray-200 hover:bg-gray-50 text-gray-800 font-bold text-xs rounded-xl shadow-sm transition-all flex items-center gap-1.5 cursor-pointer"
+            className="px-3.5 py-2.5 bg-white border border-[#EAE5DC] hover:bg-[#FAF8F5] text-[#1A1817] font-bold text-xs rounded-xl shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer"
           >
-            <Users className="w-4 h-4 text-ayurveda-700" /> Add Customer
+            <Users className="w-4 h-4 text-[#5C1D24]" /> Add Customer
           </Link>
 
           <Link
             href="/dashboard/sales/raw-material-requests"
-            className="px-3.5 py-2.5 bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs rounded-xl shadow-md transition-all flex items-center gap-1.5 cursor-pointer"
+            className="px-3.5 py-2.5 bg-[#FAF8F5] hover:bg-[#F2ECE4] text-[#5C1D24] border border-[#EAE5DC] font-bold text-xs rounded-xl shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer"
           >
-            <Layers className="w-4 h-4" /> Order Raw Material
+            <Layers className="w-4 h-4 text-[#5C1D24]" /> Order Raw Material
           </Link>
 
           <Link
             href="/dashboard/sales/production-requests"
-            className="px-3.5 py-2.5 bg-blue-700 hover:bg-blue-800 text-white font-bold text-xs rounded-xl shadow-md transition-all flex items-center gap-1.5 cursor-pointer"
+            className="px-3.5 py-2.5 bg-[#5C1D24] hover:bg-[#4A151C] text-white font-bold text-xs rounded-xl shadow-xs transition-all flex items-center gap-1.5 cursor-pointer"
           >
-            <Factory className="w-4 h-4" /> Create Production Request
+            <Factory className="w-4 h-4 text-[#B8944D]" /> Create Production Request
           </Link>
         </div>
       </div>
 
       {/* 4 Primary Top KPI Cards (Mandatory Sales Focus) */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 w-full max-w-full">
         {/* 1. Today's Sales */}
-        <div className="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm space-y-3">
+        <div className="bg-white p-5 rounded-2xl border border-[#EAE5DC] shadow-[0_1px_3px_rgba(26,24,23,0.02)] space-y-3 min-w-0 overflow-hidden">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Today's Sales</span>
-            <div className="p-2.5 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-100">
-              <DollarSign className="w-5 h-5" />
+            <span className="text-xs font-semibold text-[#8C857E] uppercase tracking-wider font-mono">Today's Sales</span>
+            <div className="p-2.5 rounded-xl bg-[#FAF8F5] text-[#5C1D24] border border-[#EAE5DC]">
+              <DollarSign className="w-4 h-4" />
             </div>
           </div>
           <div>
-            <h3 className="text-2xl font-black text-gray-900">
-              ₹{(salesData.todaySales || 125000).toLocaleString('en-IN')}
+            <h3 className="text-2xl font-bold text-[#1A1817] truncate" title={`₹${(salesData.todaySales || 462000).toLocaleString('en-IN')}`}>
+              ₹{(salesData.todaySales || 462000).toLocaleString('en-IN')}
             </h3>
-            <p className="text-[11px] text-emerald-600 font-bold mt-1 flex items-center gap-1">
-              <TrendingUp className="w-3.5 h-3.5" /> +{salesData.todaySalesGrowth || 12.4}% from yesterday
-            </p>
+            <span className="text-[10px] font-bold text-[#5C1D24] bg-[#FAF8F5] border border-[#EAE5DC] px-2 py-0.5 rounded-full inline-flex items-center gap-1 mt-1.5 truncate">
+              <TrendingUp className="w-3 h-3" /> +{salesData.todaySalesGrowth || 12.4}% from yesterday
+            </span>
           </div>
         </div>
 
         {/* 2. Monthly Revenue */}
-        <div className="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm space-y-3">
+        <div className="bg-white p-5 rounded-2xl border border-[#EAE5DC] shadow-[0_1px_3px_rgba(26,24,23,0.02)] space-y-3 min-w-0 overflow-hidden">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Monthly Revenue</span>
-            <div className="p-2.5 rounded-xl bg-ayurveda-50 text-ayurveda-700 border border-ayurveda-100">
-              <ShoppingCart className="w-5 h-5" />
+            <span className="text-xs font-semibold text-[#8C857E] uppercase tracking-wider font-mono">Monthly Revenue</span>
+            <div className="p-2.5 rounded-xl bg-[#FAF8F5] text-[#1A1817] border border-[#EAE5DC]">
+              <ShoppingCart className="w-4 h-4 text-[#B8944D]" />
             </div>
           </div>
           <div>
-            <h3 className="text-2xl font-black text-gray-900">
-              ₹{(salesData.monthlySales || 1456000).toLocaleString('en-IN')}
+            <h3 className="text-2xl font-bold text-[#1A1817] truncate" title={`₹${(salesData.monthlySales || 819840.4).toLocaleString('en-IN')}`}>
+              ₹{(salesData.monthlySales || 819840.4).toLocaleString('en-IN')}
             </h3>
-            <p className="text-[11px] text-emerald-600 font-bold mt-1 flex items-center gap-1">
-              <TrendingUp className="w-3.5 h-3.5" /> +{salesData.monthlySalesGrowth || 8.2}% target pace
-            </p>
+            <span className="text-[10px] font-bold text-[#5C1D24] bg-[#FAF8F5] border border-[#EAE5DC] px-2 py-0.5 rounded-full inline-flex items-center gap-1 mt-1.5 truncate">
+              <TrendingUp className="w-3 h-3" /> +{salesData.monthlySalesGrowth || 8.2}% target pace
+            </span>
           </div>
         </div>
 
         {/* 3. Pending Orders */}
-        <div className="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm space-y-3">
+        <div className="bg-white p-5 rounded-2xl border border-[#EAE5DC] shadow-[0_1px_3px_rgba(26,24,23,0.02)] space-y-3 min-w-0 overflow-hidden">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Pending Orders</span>
-            <div className="p-2.5 rounded-xl bg-amber-50 text-amber-700 border border-amber-100">
-              <Clock className="w-5 h-5" />
+            <span className="text-xs font-semibold text-[#8C857E] uppercase tracking-wider font-mono">Pending Orders</span>
+            <div className="p-2.5 rounded-xl bg-[#FAF6ED] text-[#8C6512] border border-[#EAD7B5]">
+              <Clock className="w-4 h-4" />
             </div>
           </div>
           <div>
-            <h3 className="text-2xl font-black text-gray-900">
-              {salesData.pendingOrdersCount || 28} Orders
+            <h3 className="text-2xl font-bold text-[#1A1817] truncate">
+              {salesData.pendingOrdersCount || 8} Orders
             </h3>
-            <p className="text-[11px] text-amber-700 font-semibold mt-1">
+            <span className="text-[10px] font-semibold text-[#8C6512] bg-[#FAF6ED] border border-[#EAD7B5] px-2 py-0.5 rounded-full inline-block mt-1.5 truncate">
               {salesData.pendingOrdersAwaitingAction || 12} awaiting RM purchase / production
-            </p>
+            </span>
           </div>
         </div>
 
         {/* 4. Outstanding Payments */}
-        <div className="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm space-y-3">
+        <div className="bg-white p-5 rounded-2xl border border-[#EAE5DC] shadow-[0_1px_3px_rgba(26,24,23,0.02)] space-y-3 min-w-0 overflow-hidden">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Outstanding Payments</span>
-            <div className="p-2.5 rounded-xl bg-rose-50 text-rose-700 border border-rose-100">
-              <AlertTriangle className="w-5 h-5" />
+            <span className="text-xs font-semibold text-[#8C857E] uppercase tracking-wider font-mono">Outstanding Payments</span>
+            <div className="p-2.5 rounded-xl bg-[#FDF2F4] text-[#8C1D2F] border border-[#F7D2D9]">
+              <AlertTriangle className="w-4 h-4" />
             </div>
           </div>
           <div>
-            <h3 className="text-2xl font-black text-gray-900">
-              ₹{(salesData.outstandingPayments || 485000).toLocaleString('en-IN')}
+            <h3 className="text-2xl font-bold text-[#8C1D2F] truncate" title={`₹${(salesData.outstandingPayments || 819840.4).toLocaleString('en-IN')}`}>
+              ₹{(salesData.outstandingPayments || 819840.4).toLocaleString('en-IN')}
             </h3>
-            <p className="text-[11px] text-rose-700 font-semibold mt-1">
+            <span className="text-[10px] font-semibold text-[#8C1D2F] bg-[#FDF2F4] border border-[#F7D2D9] px-2 py-0.5 rounded-full inline-block mt-1.5 truncate">
               {salesData.outstandingCustomersCount || 8} customers balance due
-            </p>
+            </span>
           </div>
         </div>
       </div>
@@ -311,33 +311,56 @@ export default function SalesDashboardPage() {
       {/* Main Charts & Revenue Analytics */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Revenue Trend Chart */}
-        <div className="lg:col-span-8 bg-white p-6 rounded-2xl border border-gray-200 shadow-sm space-y-4">
-          <div className="flex items-center justify-between border-b pb-3">
+        <div className="lg:col-span-8 bg-white p-6 rounded-2xl border border-[#EAE5DC] shadow-[0_1px_3px_rgba(26,24,23,0.02)] space-y-4">
+          <div className="flex items-center justify-between border-b border-[#EAE5DC] pb-3">
             <div>
-              <h3 className="text-base font-bold text-gray-900">Daily Sales Revenue & Segment Breakdown</h3>
-              <p className="text-xs text-gray-500">Live API transactions from B2B, B2C & Distributor channels</p>
+              <span className="text-[10px] font-bold text-[#6B1D2F] uppercase tracking-wider font-mono">CHANNEL PERFORMANCE</span>
+              <h3 className="text-base font-bold text-[#1A1817]">Daily Sales Revenue & Segment Breakdown</h3>
+              <p className="text-xs text-[#78726D]">Live API transactions from B2B, B2C & Distributor channels</p>
+            </div>
+            <div className="flex items-center gap-3 text-[11px] font-semibold text-[#5A544F]">
+              <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-[#1A1817]"></span> B2B</span>
+              <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-[#5C1D24]"></span> B2C</span>
             </div>
           </div>
 
-          <div className="h-72 w-full">
+          <div className="h-72 w-full pt-2">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={revenueChartData}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
-                <XAxis dataKey="day" stroke="#6b7280" fontSize={12} />
-                <YAxis stroke="#6b7280" fontSize={12} tickFormatter={(val) => `₹${val / 1000}k`} />
-                <Tooltip formatter={(value: any) => [`₹${Number(value).toLocaleString('en-IN')}`, 'Sales']} />
-                <Bar dataKey="b2b" name="B2B Sales" fill="#1b4332" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="b2c" name="B2C Retail" fill="#2d6a4f" radius={[4, 4, 0, 0]} />
+              <BarChart data={revenueChartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#EAE5DC" />
+                <XAxis dataKey="day" stroke="#78726D" fontSize={11} axisLine={{ stroke: '#EAE5DC' }} tickLine={false} />
+                <YAxis stroke="#78726D" fontSize={11} axisLine={{ stroke: '#EAE5DC' }} tickLine={false} tickFormatter={(val) => `₹${val / 1000}k`} />
+                <Tooltip
+                  content={({ active, payload, label }: any) => {
+                    if (active && payload && payload.length) {
+                      return (
+                        <div className="bg-white p-3 rounded-xl border border-[#EAE5DC] shadow-lg text-xs space-y-1">
+                          <p className="font-bold text-[#1A1817] font-mono">{label}</p>
+                          <p className="text-[#1A1817] font-semibold">
+                            B2B: <strong className="font-mono">₹{Number(payload[0]?.value || 0).toLocaleString('en-IN')}</strong>
+                          </p>
+                          <p className="text-[#5C1D24] font-semibold">
+                            B2C: <strong className="font-mono">₹{Number(payload[1]?.value || 0).toLocaleString('en-IN')}</strong>
+                          </p>
+                        </div>
+                      );
+                    }
+                    return null;
+                  }}
+                />
+                <Bar dataKey="b2b" name="B2B Sales" fill="#1A1817" radius={[6, 6, 0, 0]} />
+                <Bar dataKey="b2c" name="B2C Retail" fill="#5C1D24" radius={[6, 6, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
         </div>
 
         {/* B2B / B2C Customer Distribution */}
-        <div className="lg:col-span-4 bg-white p-6 rounded-2xl border border-gray-200 shadow-sm space-y-4">
-          <div className="border-b pb-3">
-            <h3 className="text-base font-bold text-gray-900">Customer Channel Distribution</h3>
-            <p className="text-xs text-gray-500">Revenue split across customer types</p>
+        <div className="lg:col-span-4 bg-white p-6 rounded-2xl border border-[#EAE5DC] shadow-[0_1px_3px_rgba(26,24,23,0.02)] space-y-4">
+          <div className="border-b border-[#EAE5DC] pb-3">
+            <span className="text-[10px] font-bold text-[#6B1D2F] uppercase tracking-wider font-mono">REVENUE SPLIT</span>
+            <h3 className="text-base font-bold text-[#1A1817]">Customer Channel Distribution</h3>
+            <p className="text-xs text-[#78726D]">Revenue split across customer types</p>
           </div>
 
           <div className="h-52 w-full flex items-center justify-center">
@@ -348,19 +371,31 @@ export default function SalesDashboardPage() {
                     <Cell key={`cell-${index}`} fill={entry.color} />
                   ))}
                 </Pie>
-                <Tooltip formatter={(value: any) => [`₹${Number(value).toLocaleString('en-IN')}`, 'Revenue']} />
+                <Tooltip
+                  content={({ active, payload }: any) => {
+                    if (active && payload && payload.length) {
+                      return (
+                        <div className="bg-white p-2.5 rounded-xl border border-[#EAE5DC] shadow-lg text-xs space-y-1">
+                          <p className="font-bold text-[#1A1817]">{payload[0]?.name}</p>
+                          <p className="font-bold text-[#5C1D24] font-mono">₹{Number(payload[0]?.value || 0).toLocaleString('en-IN')}</p>
+                        </div>
+                      );
+                    }
+                    return null;
+                  }}
+                />
               </PieChart>
             </ResponsiveContainer>
           </div>
 
-          <div className="space-y-2 border-t pt-3 text-xs">
+          <div className="space-y-2 border-t border-[#EAE5DC] pt-3 text-xs">
             {pieData.map((item, idx) => (
               <div key={idx} className="flex items-center justify-between">
-                <span className="flex items-center gap-2 font-medium text-gray-700">
+                <span className="flex items-center gap-2 font-medium text-[#5A544F]">
                   <span className="w-2.5 h-2.5 rounded-full inline-block" style={{ backgroundColor: item.color }}></span>
                   {item.name}
                 </span>
-                <span className="font-bold text-gray-900">₹{item.value.toLocaleString('en-IN')}</span>
+                <span className="font-bold text-[#1A1817] font-mono">₹{item.value.toLocaleString('en-IN')}</span>
               </div>
             ))}
           </div>
@@ -368,17 +403,18 @@ export default function SalesDashboardPage() {
       </div>
 
       {/* Raw Material Purchase Requests initiated by Sales Executive */}
-      <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 space-y-4">
-        <div className="flex items-center justify-between border-b pb-3">
+      <div className="bg-white rounded-2xl border border-[#EAE5DC] shadow-[0_1px_3px_rgba(26,24,23,0.02)] p-6 space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[#EAE5DC] pb-4">
           <div>
-            <h3 className="text-base font-black text-gray-900 flex items-center gap-2">
-              <Layers className="w-5 h-5 text-amber-600" /> Sales-Initiated Raw Material Purchase Requests
+            <span className="text-[10px] font-bold text-[#6B1D2F] uppercase tracking-wider font-mono">BOM SHORTAGE REQUISITIONS</span>
+            <h3 className="font-bold text-base text-[#1A1817] mt-0.5 flex items-center gap-2">
+              <Layers className="w-5 h-5 text-[#5C1D24]" /> Sales-Initiated Raw Material Purchase Requests
             </h3>
-            <p className="text-xs text-gray-500">Automated BOM shortage requests initiated during sales order creation</p>
+            <p className="text-xs text-[#78726D]">Automated BOM shortage requests initiated during sales order creation</p>
           </div>
           <Link
             href="/dashboard/sales/raw-material-requests"
-            className="text-xs font-bold text-ayurveda-700 hover:underline flex items-center gap-1"
+            className="text-xs font-bold text-[#5C1D24] hover:underline flex items-center gap-1 font-mono"
           >
             View All Requests <ArrowUpRight className="w-4 h-4" />
           </Link>
@@ -387,7 +423,7 @@ export default function SalesDashboardPage() {
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse text-xs">
             <thead>
-              <tr className="bg-gray-50 font-bold text-gray-500 border-b uppercase">
+              <tr className="bg-[#FAF8F5] font-semibold text-[#78726D] border-b border-[#EAE5DC] uppercase text-[10px] font-mono">
                 <th className="p-3">Request ID</th>
                 <th className="p-3">Linked Sales Order</th>
                 <th className="p-3">Preferred Supplier</th>
@@ -397,31 +433,35 @@ export default function SalesDashboardPage() {
                 <th className="p-3">Required Date</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody className="divide-y divide-[#EAE5DC]">
               {salesData.rawMaterialRequests?.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="p-6 text-center text-gray-400">
+                  <td colSpan={7} className="p-6 text-center text-[#A39D96]">
                     No active raw material shortage requests. Create a sales order to test automatic BOM shortage detection.
                   </td>
                 </tr>
               ) : (
                 salesData.rawMaterialRequests?.map((rm: any) => (
-                  <tr key={rm.id} className="hover:bg-gray-50">
-                    <td className="p-3 font-mono font-bold text-ayurveda-900">{rm.requestNo}</td>
-                    <td className="p-3 font-semibold text-gray-800">{rm.salesOrder?.orderNumber || 'SO-1024'}</td>
-                    <td className="p-3 font-medium text-gray-700">{rm.supplier?.name || 'Saurashtra Herbs & Spices'}</td>
-                    <td className="p-3 font-bold text-gray-900">₹{rm.estimatedCost?.toLocaleString('en-IN')}</td>
+                  <tr key={rm.id} className="hover:bg-[#FAF8F5] transition-colors">
+                    <td className="p-3 font-mono font-bold text-[#5C1D24]">{rm.requestNo}</td>
+                    <td className="p-3 font-semibold text-[#1A1817]">{rm.salesOrder?.orderNumber || 'SO-1024'}</td>
+                    <td className="p-3 font-medium text-[#5A544F]">{rm.supplier?.name || 'Saurashtra Herbs & Spices'}</td>
+                    <td className="p-3 font-bold text-[#1A1817]">₹{rm.estimatedCost?.toLocaleString('en-IN')}</td>
                     <td className="p-3">
-                      <span className="px-2 py-0.5 rounded bg-amber-100 text-amber-900 font-bold text-[10px]">
+                      <span className="px-2.5 py-0.5 rounded-full bg-[#FAF6ED] text-[#8C6512] border border-[#EAD7B5] font-bold text-[10px]">
                         {rm.priority}
                       </span>
                     </td>
                     <td className="p-3">
-                      <span className="px-2.5 py-1 rounded-full bg-blue-100 text-blue-900 font-extrabold text-[10px]">
+                      <span className={`px-2.5 py-1 rounded-full border font-bold text-[10px] ${
+                        rm.status === 'ORDERED'
+                          ? 'bg-[#FAF8F5] text-[#5C1D24] border-[#EAE5DC]'
+                          : 'bg-[#FAF8F5] text-[#78726D] border-[#EAE5DC]'
+                      }`}>
                         {rm.status}
                       </span>
                     </td>
-                    <td className="p-3 text-gray-500">{new Date(rm.requiredDate).toLocaleDateString()}</td>
+                    <td className="p-3 text-[#78726D] font-mono">{new Date(rm.requiredDate).toLocaleDateString('en-IN')}</td>
                   </tr>
                 ))
               )}
@@ -432,45 +472,56 @@ export default function SalesDashboardPage() {
 
       {/* Modal: New Sales Order Workflow */}
       {showOrderModal && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4">
-            <h3 className="text-lg font-bold text-gray-900">Create New Sales Order</h3>
+        <div className="fixed inset-0 bg-[#1A1817]/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl space-y-4 border border-[#EAE5DC]">
+            <div className="flex items-center justify-between border-b border-[#EAE5DC] pb-3">
+              <div>
+                <span className="text-[10px] font-bold text-[#6B1D2F] uppercase tracking-wider font-mono">SALES ORDER DISPATCH</span>
+                <h3 className="text-lg font-bold text-[#1A1817]">Create New Sales Order</h3>
+              </div>
+              <button
+                onClick={() => setShowOrderModal(false)}
+                className="text-[#8C857E] hover:text-[#1A1817] font-bold text-lg cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
 
             {orderResultMsg ? (
               <div className="space-y-4">
                 <div
-                  className={`p-4 rounded-xl text-xs space-y-2 ${
+                  className={`p-4 rounded-2xl text-xs space-y-2 border ${
                     orderResultMsg.data?.materialRequired || orderResultMsg.data?.productionRequired
-                      ? 'bg-amber-50 border border-amber-300 text-amber-950'
-                      : 'bg-emerald-50 border border-emerald-300 text-emerald-950'
+                      ? 'bg-[#FAF6ED] border-[#EAD7B5] text-[#8C6512]'
+                      : 'bg-[#FAF8F5] border-[#EAE5DC] text-[#5C1D24]'
                   }`}
                 >
                   <div className="flex items-center gap-2 font-bold text-sm">
                     {orderResultMsg.data?.materialRequired ? (
-                      <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0" />
+                      <AlertTriangle className="w-5 h-5 text-[#8C6512] shrink-0" />
                     ) : (
-                      <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
+                      <CheckCircle2 className="w-5 h-5 text-[#5C1D24] shrink-0" />
                     )}
                     {orderResultMsg.message}
                   </div>
 
                   {orderResultMsg.data?.shortageReport?.[0] && (
-                    <div className="bg-white p-3 rounded-lg border border-amber-200 mt-2 space-y-2 text-xs">
-                      <p className="font-bold text-gray-900">Backend Stock & Shortage Breakdown:</p>
-                      <ul className="list-disc pl-4 space-y-1 text-gray-700">
+                    <div className="bg-white p-3.5 rounded-xl border border-[#EAE5DC] mt-2 space-y-2 text-xs">
+                      <p className="font-bold text-[#1A1817]">Backend Stock & Shortage Breakdown:</p>
+                      <ul className="list-disc pl-4 space-y-1 text-[#5A544F]">
                         <li>Product: <strong>{orderResultMsg.data.shortageReport[0].productName}</strong></li>
                         <li>Required Quantity: <strong>{orderResultMsg.data.shortageReport[0].requiredQuantity} units</strong></li>
                         <li>Available-to-Sell: <strong>{orderResultMsg.data.shortageReport[0].availableToSell} units</strong></li>
-                        <li className="text-red-700 font-bold">Finished Goods Shortage: {orderResultMsg.data.shortageReport[0].finishedShortage} units</li>
+                        <li className="text-[#8C1D2F] font-bold">Finished Goods Shortage: {orderResultMsg.data.shortageReport[0].finishedShortage} units</li>
                       </ul>
 
                       {orderResultMsg.data.shortageReport[0].rmBreakdown?.length > 0 && (
-                        <div className="pt-2 border-t border-amber-100">
-                          <p className="font-bold text-amber-900 text-[11px] mb-1">Calculated BOM Raw Material Shortage:</p>
+                        <div className="pt-2 border-t border-[#EAE5DC]">
+                          <p className="font-bold text-[#8C6512] text-[11px] mb-1">Calculated BOM Raw Material Shortage:</p>
                           {orderResultMsg.data.shortageReport[0].rmBreakdown.map((rm: any, idx: number) => (
-                            <div key={idx} className="flex justify-between text-[11px] text-gray-800">
+                            <div key={idx} className="flex justify-between text-[11px] text-[#1A1817]">
                               <span>• {rm.rawMaterialName}</span>
-                              <span className="font-bold text-red-700">Need: {rm.shortageQuantity} {rm.unit}</span>
+                              <span className="font-bold text-[#8C1D2F]">Need: {rm.shortageQuantity} {rm.unit}</span>
                             </div>
                           ))}
                         </div>
@@ -482,14 +533,14 @@ export default function SalesDashboardPage() {
                 <div className="flex gap-2">
                   <button
                     onClick={() => setShowOrderModal(false)}
-                    className="flex-1 py-2.5 bg-ayurveda-800 text-white font-bold text-xs rounded-xl cursor-pointer"
+                    className="flex-1 py-2.5 bg-[#1A1817] hover:bg-[#2E2927] text-white font-bold text-xs rounded-xl cursor-pointer shadow-xs transition-all"
                   >
                     Close Window
                   </button>
                   {orderResultMsg.data?.rawMaterialPurchaseRequest && (
                     <Link
                       href="/dashboard/sales/raw-material-requests"
-                      className="flex-1 py-2.5 bg-amber-600 text-white font-bold text-xs rounded-xl text-center cursor-pointer"
+                      className="flex-1 py-2.5 bg-[#5C1D24] hover:bg-[#4A151C] text-white font-bold text-xs rounded-xl text-center cursor-pointer shadow-xs transition-all"
                     >
                       View RM Purchase Request →
                     </Link>
@@ -499,12 +550,12 @@ export default function SalesDashboardPage() {
             ) : (
               <form onSubmit={handleCreateOrder} className="space-y-4 text-xs">
                 <div>
-                  <label className="block font-bold text-gray-700 mb-1">Select Customer</label>
+                  <label className="block font-bold text-[#1A1817] mb-1">Select Customer</label>
                   <select
                     required
                     value={selectedCustomer}
                     onChange={(e) => setSelectedCustomer(e.target.value)}
-                    className="w-full p-2.5 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white"
+                    className="w-full p-2.5 border border-[#EAE5DC] rounded-xl bg-[#FAF8F5] focus:bg-white text-[#1A1817] focus:outline-hidden focus:border-[#5C1D24]"
                   >
                     <option value="">-- Choose Customer --</option>
                     {customers.map((c: any) => (
@@ -516,12 +567,12 @@ export default function SalesDashboardPage() {
                 </div>
 
                 <div>
-                  <label className="block font-bold text-gray-700 mb-1">Select Product</label>
+                  <label className="block font-bold text-[#1A1817] mb-1">Select Product</label>
                   <select
                     required
                     value={selectedProduct}
                     onChange={(e) => setSelectedProduct(e.target.value)}
-                    className="w-full p-2.5 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white"
+                    className="w-full p-2.5 border border-[#EAE5DC] rounded-xl bg-[#FAF8F5] focus:bg-white text-[#1A1817] focus:outline-hidden focus:border-[#5C1D24]"
                   >
                     <option value="">-- Choose Product --</option>
                     {products.map((p: any) => (
@@ -533,28 +584,28 @@ export default function SalesDashboardPage() {
                 </div>
 
                 <div>
-                  <label className="block font-bold text-gray-700 mb-1">Order Quantity (Units)</label>
+                  <label className="block font-bold text-[#1A1817] mb-1">Order Quantity (Units)</label>
                   <input
                     type="number"
                     required
                     min={1}
                     value={quantity}
                     onChange={(e) => setQuantity(Number(e.target.value))}
-                    className="w-full p-2.5 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white"
+                    className="w-full p-2.5 border border-[#EAE5DC] rounded-xl bg-[#FAF8F5] focus:bg-white text-[#1A1817] focus:outline-hidden focus:border-[#5C1D24]"
                   />
-                  <p className="text-[10px] text-gray-500 mt-1">
+                  <p className="text-[10px] text-[#78726D] mt-1 font-mono">
                     Tip: Enter 500 units to test backend finished stock check & automatic BOM Raw Material shortage calculation.
                   </p>
                 </div>
 
                 <div>
-                  <label className="block font-bold text-gray-700 mb-1">Shipping & Delivery Address</label>
+                  <label className="block font-bold text-[#1A1817] mb-1">Shipping & Delivery Address</label>
                   <input
                     type="text"
                     required
                     value={address}
                     onChange={(e) => setAddress(e.target.value)}
-                    className="w-full p-2.5 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white"
+                    className="w-full p-2.5 border border-[#EAE5DC] rounded-xl bg-[#FAF8F5] focus:bg-white text-[#1A1817] focus:outline-hidden focus:border-[#5C1D24]"
                   />
                 </div>
 
@@ -562,14 +613,14 @@ export default function SalesDashboardPage() {
                   <button
                     type="button"
                     onClick={() => setShowOrderModal(false)}
-                    className="flex-1 py-2.5 border border-gray-200 rounded-xl font-bold text-gray-600 hover:bg-gray-50 cursor-pointer"
+                    className="flex-1 py-2.5 border border-[#EAE5DC] rounded-xl font-bold text-[#5A544F] bg-white hover:bg-[#FAF8F5] cursor-pointer transition-all"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
                     disabled={createOrderMutation.isPending}
-                    className="flex-1 py-2.5 bg-ayurveda-700 hover:bg-ayurveda-800 text-white font-bold rounded-xl transition-all cursor-pointer"
+                    className="flex-1 py-2.5 bg-[#1A1817] hover:bg-[#2E2927] text-white font-bold rounded-xl transition-all cursor-pointer shadow-xs"
                   >
                     {createOrderMutation.isPending ? 'Verifying Backend Stock...' : 'Submit Sales Order'}
                   </button>

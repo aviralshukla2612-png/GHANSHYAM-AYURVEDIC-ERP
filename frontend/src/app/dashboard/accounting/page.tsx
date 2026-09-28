@@ -31,8 +31,13 @@ import {
   Upload,
   ExternalLink,
   Plus,
-  FileCode
+  FileCode,
+  ShoppingCart,
+  Truck,
+  Scale,
+  PackageCheck
 } from 'lucide-react';
+import Link from 'next/link';
 import {
   BarChart,
   Bar,
@@ -42,7 +47,8 @@ import {
   Tooltip,
   ResponsiveContainer,
   AreaChart,
-  Area
+  Area,
+  Cell
 } from 'recharts';
 
 export default function AccountingPage() {
@@ -50,7 +56,7 @@ export default function AccountingPage() {
 
   // Navigation & View Tabs
   const [activeTab, setActiveTab] = useState<
-    'overview' | 'table4' | 'gstr1' | 'b2b' | 'hsn' | 'docs' | 'profitability' | 'caHistory'
+    'overview' | 'procurement' | 'table4' | 'gstr1' | 'b2b' | 'hsn' | 'docs' | 'profitability' | 'caHistory'
   >('overview');
 
   // Filter & Phone States
@@ -80,6 +86,11 @@ export default function AccountingPage() {
     queryFn: () => apiClient.get('/api/accounting/dashboard'),
   });
 
+  const { data: procRes, refetch: refetchProc } = useQuery({
+    queryKey: ['procurementFinances'],
+    queryFn: () => apiClient.get('/api/accounting/procurement-finances'),
+  });
+
   const { data: profitRes } = useQuery({
     queryKey: ['productProfit'],
     queryFn: () => apiClient.get('/api/accounting/product-profit'),
@@ -106,6 +117,13 @@ export default function AccountingPage() {
   });
 
   const accData = (accRes as any)?.data || {};
+  const procData = (procRes as any)?.data || {
+    totalPOValue: 0,
+    totalReceivedValue: 0,
+    pendingCommitment: 0,
+    purchaseOrders: [],
+    pendingRequests: [],
+  };
   const profitability = (profitRes as any)?.data || [];
   const fetchedInvoices = (invoicesRes as any)?.data || [];
   const gstr1 = (gstr1Res as any)?.data || {};
@@ -413,55 +431,57 @@ Download full JSON/CSV package from ERP portal.`;
       )}
 
       {/* HEADER SECTION WITH TARGET WHATSAPP CA INPUT */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-gray-200 shadow-sm">
-        <div>
-          <div className="flex items-center gap-2">
-            <span className="px-2.5 py-1 rounded-md bg-emerald-100 text-emerald-800 text-[11px] font-black uppercase tracking-wider">
-              GSTR-1 & Financial Compliance Center
-            </span>
-            <span className="text-xs text-gray-400">•</span>
-            <span className="text-xs font-semibold text-gray-600">Target CA Contact: <strong>+{caPhoneNumber}</strong></span>
+      <div className="bg-white p-6 rounded-2xl border border-[#EAE5DC] shadow-[0_2px_8px_-2px_rgba(26,24,23,0.04)] space-y-5 w-full max-w-full overflow-hidden">
+        <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="px-2.5 py-1 rounded-md bg-[#FAF8F5] text-[#6B1D2F] text-[11px] font-bold uppercase tracking-wider border border-[#EAE5DC] font-mono">
+                GSTR-1 & FINANCIAL COMPLIANCE
+              </span>
+              <span className="text-xs text-[#A39D96]">•</span>
+              <span className="text-xs font-semibold text-[#78726D]">Target CA Contact: <strong>+{caPhoneNumber}</strong></span>
+            </div>
+            <h1 className="text-xl font-bold text-[#1A1817] mt-1 flex items-center gap-2">
+              <Calculator className="w-5 h-5 text-[#5C1D24]" /> Accountant & GST Control Center
+            </h1>
+            <p className="text-xs text-[#78726D] mt-1 max-w-3xl">
+              Official GSTR-1 Table 4 (B2B Outward Supplies), Table 12 (HSN Summary), Table 13 (Documents Issued), File Import engine, and direct WhatsApp dispatch to target CA number `{caPhoneNumber}`.
+            </p>
           </div>
-          <h1 className="text-2xl font-black text-gray-900 mt-1 flex items-center gap-2">
-            <Calculator className="w-7 h-7 text-ayurveda-700" /> Accountant & GST Control Center
-          </h1>
-          <p className="text-xs text-gray-500 mt-1 max-w-3xl">
-            Official GSTR-1 Table 4 (B2B Outward Supplies), Table 12 (HSN Summary), Table 13 (Documents Issued), File Import engine, and direct WhatsApp dispatch to target CA number `{caPhoneNumber}`.
-          </p>
         </div>
 
         {/* Action Controls & Primary CA Button */}
-        <div className="flex flex-wrap items-center gap-2.5 shrink-0">
-          <div className="flex items-center gap-1.5 bg-gray-50 px-3 py-2 rounded-xl border border-gray-200 text-xs font-bold text-gray-800">
-            <Phone className="w-3.5 h-3.5 text-gold-600" />
+        <div className="flex flex-wrap items-center gap-2.5 pt-2 border-t border-[#EAE5DC]/80 w-full max-w-full">
+          <div className="flex items-center gap-1.5 bg-[#FAF8F5] px-3 py-2 rounded-xl border border-[#EAE5DC] text-xs font-bold text-[#1A1817]">
+            <Phone className="w-3.5 h-3.5 text-[#B8944D]" />
             <span>CA Phone:</span>
             <input
               type="text"
               value={caPhoneNumber}
               onChange={(e) => setCaPhoneNumber(e.target.value)}
-              className="w-28 bg-white border border-gray-300 rounded px-1.5 py-0.5 font-mono text-xs text-gray-900 font-extrabold text-center"
+              className="w-28 bg-white border border-[#EAE5DC] rounded px-1.5 py-0.5 font-mono text-xs text-[#1A1817] font-bold text-center focus:outline-none focus:border-[#5C1D24]"
             />
           </div>
 
           <button
             onClick={() => setShowImportModal(true)}
-            className="px-3.5 py-2.5 bg-purple-50 hover:bg-purple-100 text-purple-900 font-bold text-xs rounded-xl border border-purple-200 transition-all flex items-center gap-1.5 cursor-pointer"
+            className="px-3.5 py-2 bg-[#FAF8F5] hover:bg-[#F2ECE4] text-[#1A1817] font-semibold text-xs rounded-xl border border-[#EAE5DC] transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs"
           >
-            <Upload className="w-4 h-4 text-purple-700" /> Import GSTR-1 Data
+            <Upload className="w-4 h-4 text-[#5C1D24]" /> Import GSTR-1 Data
           </button>
 
           <button
             onClick={() => setShowValidationModal(true)}
-            className="px-3.5 py-2.5 bg-blue-50 hover:bg-blue-100 text-blue-900 font-bold text-xs rounded-xl border border-blue-200 transition-all flex items-center gap-1.5 cursor-pointer"
+            className="px-3.5 py-2 bg-[#FAF8F5] hover:bg-[#F2ECE4] text-[#1A1817] font-semibold text-xs rounded-xl border border-[#EAE5DC] transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs"
           >
-            <ShieldCheck className="w-4 h-4 text-blue-700" /> Validate GST Data
+            <ShieldCheck className="w-4 h-4 text-[#5C1D24]" /> Validate GST Data
           </button>
 
           <button
             onClick={handleDirectWhatsAppWebSend}
-            className="px-3.5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs rounded-xl shadow-xs transition-all flex items-center gap-1.5 cursor-pointer"
+            className="px-3.5 py-2 bg-[#1A1817] hover:bg-[#2E2927] text-white font-semibold text-xs rounded-xl shadow-xs transition-all flex items-center gap-1.5 cursor-pointer"
           >
-            <ExternalLink className="w-4 h-4" /> Open WhatsApp Web ({caPhoneNumber})
+            <ExternalLink className="w-4 h-4 text-[#B8944D]" /> Open WhatsApp Web
           </button>
 
           <button
@@ -470,72 +490,75 @@ Download full JSON/CSV package from ERP portal.`;
               setDispatchStep(0);
               setShowCAModal(true);
             }}
-            className="px-4 py-2.5 bg-gradient-to-r from-gold-500 to-amber-400 hover:brightness-110 text-ayurveda-950 font-black text-xs rounded-xl shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer"
+            className="px-4 py-2 bg-[#5C1D24] hover:bg-[#4A151C] text-white font-semibold text-xs rounded-xl shadow-xs transition-all flex items-center justify-center gap-2 cursor-pointer ml-auto sm:ml-0"
           >
-            <Send className="w-4 h-4" /> SEND ALL DETAIL TO {caPhoneNumber}
+            <Send className="w-4 h-4" /> SEND ALL DETAIL TO CA (+91 {caPhoneNumber})
           </button>
         </div>
       </div>
 
       {/* 6 API-DRIVEN FINANCIAL & GST KPI CARDS */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-        <div className="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm space-y-1">
-          <span className="text-[10px] font-bold text-gray-500 uppercase">Total Sales Revenue</span>
-          <p className="text-lg font-black text-ayurveda-900">
-            ₹{(accData.totalRevenue || 1845000).toLocaleString('en-IN')}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 w-full max-w-full">
+        <div className="bg-white p-4 rounded-2xl border border-[#EAE5DC] shadow-[0_1px_3px_rgba(26,24,23,0.02)] space-y-1 min-w-0 overflow-hidden">
+          <span className="text-[10px] font-semibold text-[#8C857E] uppercase tracking-wider font-mono truncate block">Total Revenue</span>
+          <p className="text-base lg:text-lg font-bold text-[#1A1817] truncate" title={`₹${(accData.totalRevenue || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })}`}>
+            ₹{(accData.totalRevenue || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })}
           </p>
-          <span className="text-[10px] font-extrabold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded inline-block">
+          <span className="text-[10px] font-bold text-[#5C1D24] bg-[#FAF8F5] border border-[#EAE5DC] px-1.5 py-0.5 rounded inline-block truncate">
             +12.4% vs prev period
           </span>
         </div>
 
-        <div className="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm space-y-1">
-          <span className="text-[10px] font-bold text-gray-500 uppercase">Total Purchases</span>
-          <p className="text-lg font-black text-gray-900">
-            ₹{(accData.totalPurchases || 820000).toLocaleString('en-IN')}
+        <div className="bg-white p-4 rounded-2xl border border-[#EAE5DC] shadow-[0_1px_3px_rgba(26,24,23,0.02)] space-y-1 min-w-0 overflow-hidden">
+          <span className="text-[10px] font-semibold text-[#8C857E] uppercase tracking-wider font-mono truncate block">Total Purchases</span>
+          <p className="text-base lg:text-lg font-bold text-[#1A1817] truncate" title={`₹${(accData.totalPurchases || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })}`}>
+            ₹{(accData.totalPurchases || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })}
           </p>
-          <p className="text-[10px] font-semibold text-gray-500">RM & Packaging Goods</p>
+          <p className="text-[10px] font-medium text-[#78726D] truncate">RM & Packaging Goods</p>
         </div>
 
-        <div className="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm space-y-1">
-          <span className="text-[10px] font-bold text-gray-500 uppercase">Total Expenses</span>
-          <p className="text-lg font-black text-gray-900">
-            ₹{(accData.totalExpenses || 240000).toLocaleString('en-IN')}
+        <div className="bg-white p-4 rounded-2xl border border-[#EAE5DC] shadow-[0_1px_3px_rgba(26,24,23,0.02)] space-y-1 min-w-0 overflow-hidden">
+          <span className="text-[10px] font-semibold text-[#8C857E] uppercase tracking-wider font-mono truncate block">Total Expenses</span>
+          <p className="text-base lg:text-lg font-bold text-[#1A1817] truncate" title={`₹${(accData.totalExpenses || 240000).toLocaleString('en-IN', { maximumFractionDigits: 2 })}`}>
+            ₹{(accData.totalExpenses || 240000).toLocaleString('en-IN', { maximumFractionDigits: 2 })}
           </p>
-          <p className="text-[10px] font-semibold text-gray-500">Utilities & Logistics</p>
+          <p className="text-[10px] font-medium text-[#78726D] truncate">Utilities & Logistics</p>
         </div>
 
-        <div className="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm space-y-1">
-          <span className="text-[10px] font-bold text-gray-500 uppercase">Gross Profit Margin</span>
-          <p className="text-lg font-black text-emerald-600">
-            ₹{(accData.grossProfit || 1025000).toLocaleString('en-IN')}
+        <div className="bg-white p-4 rounded-2xl border border-[#EAE5DC] shadow-[0_1px_3px_rgba(26,24,23,0.02)] space-y-1 min-w-0 overflow-hidden">
+          <span className="text-[10px] font-semibold text-[#8C857E] uppercase tracking-wider font-mono truncate block">Gross Profit</span>
+          <p className={`text-base lg:text-lg font-bold truncate ${(accData.grossProfit ?? 0) >= 0 ? 'text-[#1A1817]' : 'text-[#8C1D2F]'}`} title={`₹${(accData.grossProfit || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })}`}>
+            ₹{(accData.grossProfit || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })}
           </p>
-          <p className="text-[10px] font-bold text-emerald-700">Margin: 55.5%</p>
+          <p className="text-[10px] font-semibold text-[#5C1D24] truncate">
+            Margin: {accData.totalRevenue ? (((accData.grossProfit || 0) / accData.totalRevenue) * 100).toFixed(1) : '55.5'}%
+          </p>
         </div>
 
-        <div className="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm space-y-1">
-          <span className="text-[10px] font-bold text-gray-500 uppercase">Output / Input GST</span>
-          <p className="text-lg font-black text-amber-600">
-            ₹{(accData.gstSummary?.totalTax || 221400).toLocaleString('en-IN')}
+        <div className="bg-white p-4 rounded-2xl border border-[#EAE5DC] shadow-[0_1px_3px_rgba(26,24,23,0.02)] space-y-1 min-w-0 overflow-hidden">
+          <span className="text-[10px] font-semibold text-[#8C857E] uppercase tracking-wider font-mono truncate block">Output / Input GST</span>
+          <p className="text-base lg:text-lg font-bold text-[#8C6512] truncate" title={`₹${(accData.gstSummary?.totalTax || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })}`}>
+            ₹{(accData.gstSummary?.totalTax || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })}
           </p>
-          <p className="text-[10px] font-semibold text-gray-500">ITC Claim: ₹1,47,600</p>
+          <p className="text-[10px] font-medium text-[#78726D] truncate">ITC Claim: ₹1,47,600</p>
         </div>
 
-        <div className="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm space-y-1">
-          <span className="text-[10px] font-bold text-gray-500 uppercase">Net GST Liability</span>
-          <p className="text-lg font-black text-rose-700">
+        <div className="bg-white p-4 rounded-2xl border border-[#EAE5DC] shadow-[0_1px_3px_rgba(26,24,23,0.02)] space-y-1 min-w-0 overflow-hidden">
+          <span className="text-[10px] font-semibold text-[#8C857E] uppercase tracking-wider font-mono truncate block">Net GST Liability</span>
+          <p className="text-base lg:text-lg font-bold text-[#5C1D24] truncate">
             ₹73,800
           </p>
-          <span className="text-[10px] font-extrabold text-blue-700 bg-blue-50 px-1.5 py-0.5 rounded inline-block">
+          <span className="text-[10px] font-semibold text-[#78726D] bg-[#FAF8F5] border border-[#EAE5DC] px-1.5 py-0.5 rounded inline-block truncate">
             Target: +91 {caPhoneNumber}
           </span>
         </div>
       </div>
 
       {/* NAVIGATION TABS */}
-      <div className="flex items-center gap-2 border-b border-gray-200 overflow-x-auto pb-1">
+      <div className="flex items-center gap-2 border-b border-[#EAE5DC] overflow-x-auto pb-1 max-w-full">
         {[
           { id: 'overview', label: 'Dashboard Overview', icon: Calculator },
+          { id: 'procurement', label: 'Raw Material Spend & Funds (RM Procurement)', icon: ShoppingCart, count: procData.purchaseOrders.length + procData.pendingRequests.length },
           { id: 'table4', label: 'GSTR-1 Table 4 (B2B Taxable Supplies)', icon: FileSpreadsheet, count: invoices.length },
           { id: 'hsn', label: 'Table 12 (HSN Summary)', icon: Layers },
           { id: 'docs', label: 'Table 13 (Documents Issued)', icon: FileText },
@@ -548,16 +571,16 @@ Download full JSON/CSV package from ERP portal.`;
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id as any)}
-              className={`px-4 py-2.5 rounded-xl font-bold text-xs flex items-center gap-2 transition-all whitespace-nowrap cursor-pointer ${
+              className={`px-3.5 py-2.5 rounded-xl font-semibold text-xs flex items-center gap-2 transition-all whitespace-nowrap cursor-pointer ${
                 isActive
-                  ? 'bg-ayurveda-700 text-white shadow-sm'
-                  : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
+                  ? 'bg-[#1A1817] text-white shadow-xs'
+                  : 'bg-white text-[#5A544F] hover:bg-[#FAF8F5] border border-[#EAE5DC]'
               }`}
             >
-              <Icon className="w-4 h-4" />
+              <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-[#B8944D]' : 'text-[#78726D]'}`} />
               <span>{tab.label}</span>
               {tab.count !== undefined && (
-                <span className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold ${isActive ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-700'}`}>
+                <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${isActive ? 'bg-white/20 text-white' : 'bg-[#FAF8F5] text-[#5C1D24] border border-[#EAE5DC]'}`}>
                   {tab.count}
                 </span>
               )}
@@ -570,42 +593,114 @@ Download full JSON/CSV package from ERP portal.`;
       {activeTab === 'overview' && (
         <div className="space-y-6">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 space-y-4">
-              <div className="border-b pb-3 flex justify-between items-center">
+            {/* Chart 1: Revenue vs Expenses */}
+            <div className="bg-white rounded-2xl border border-[#EAE5DC] shadow-[0_1px_3px_rgba(26,24,23,0.02)] p-5 space-y-4">
+              <div className="border-b border-[#EAE5DC] pb-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                 <div>
-                  <h3 className="font-bold text-base text-gray-900">REVENUE VS EXPENSES TREND</h3>
-                  <p className="text-xs text-gray-500">Monthly revenue vs total purchases and operating expenses</p>
+                  <span className="text-[10px] font-bold text-[#6B1D2F] uppercase tracking-wider font-mono">FINANCIAL RUN-RATE</span>
+                  <h3 className="font-bold text-base text-[#1A1817]">REVENUE VS EXPENSES TREND</h3>
+                  <p className="text-xs text-[#78726D]">Monthly revenue vs total purchases and operating expenses</p>
+                </div>
+                <div className="flex items-center gap-3 text-[11px] font-semibold text-[#5A544F]">
+                  <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-[#1A1817]"></span> Revenue</span>
+                  <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-[#5C1D24]"></span> Expenses</span>
                 </div>
               </div>
-              <div className="h-64">
+
+              <div className="h-64 pt-2">
                 <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={financialTrend}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                    <XAxis dataKey="month" tick={{ fontSize: 10 }} />
-                    <YAxis tick={{ fontSize: 10 }} />
-                    <Tooltip />
-                    <Area type="monotone" dataKey="revenue" stroke="#1b4332" fill="#2d6a4f" fillOpacity={0.2} name="Revenue (₹)" />
-                    <Area type="monotone" dataKey="expenses" stroke="#e11d48" fill="#f43f5e" fillOpacity={0.1} name="Expenses (₹)" />
+                  <AreaChart data={financialTrend} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                    <defs>
+                      <linearGradient id="revenueGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#1A1817" stopOpacity={0.25} />
+                        <stop offset="95%" stopColor="#1A1817" stopOpacity={0.0} />
+                      </linearGradient>
+                      <linearGradient id="expensesGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#5C1D24" stopOpacity={0.25} />
+                        <stop offset="95%" stopColor="#5C1D24" stopOpacity={0.0} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#EAE5DC" />
+                    <XAxis dataKey="month" tick={{ fontSize: 11, fill: '#78726D' }} axisLine={{ stroke: '#EAE5DC' }} tickLine={false} />
+                    <YAxis
+                      tick={{ fontSize: 11, fill: '#78726D' }}
+                      axisLine={{ stroke: '#EAE5DC' }}
+                      tickLine={false}
+                      tickFormatter={(val) => `₹${(val / 100000).toFixed(1)}L`}
+                    />
+                    <Tooltip
+                      content={({ active, payload, label }: any) => {
+                        if (active && payload && payload.length) {
+                          return (
+                            <div className="bg-white p-3 rounded-xl border border-[#EAE5DC] shadow-lg text-xs space-y-1">
+                              <p className="font-bold text-[#1A1817] font-mono">{label} 2026</p>
+                              <p className="text-[#1A1817] font-semibold">
+                                Revenue: <strong className="font-mono">₹{payload[0]?.value?.toLocaleString('en-IN')}</strong>
+                              </p>
+                              <p className="text-[#5C1D24] font-semibold">
+                                Expenses: <strong className="font-mono">₹{payload[1]?.value?.toLocaleString('en-IN')}</strong>
+                              </p>
+                            </div>
+                          );
+                        }
+                        return null;
+                      }}
+                    />
+                    <Area type="monotone" dataKey="revenue" stroke="#1A1817" strokeWidth={2.5} fill="url(#revenueGrad)" name="Revenue (₹)" />
+                    <Area type="monotone" dataKey="expenses" stroke="#5C1D24" strokeWidth={2} fill="url(#expensesGrad)" name="Expenses (₹)" />
                   </AreaChart>
                 </ResponsiveContainer>
               </div>
             </div>
 
-            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 space-y-4">
-              <div className="border-b pb-3 flex justify-between items-center">
+            {/* Chart 2: Net Profit Generation */}
+            <div className="bg-white rounded-2xl border border-[#EAE5DC] shadow-[0_1px_3px_rgba(26,24,23,0.02)] p-5 space-y-4">
+              <div className="border-b border-[#EAE5DC] pb-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                 <div>
-                  <h3 className="font-bold text-base text-gray-900">NET PROFIT GENERATION</h3>
-                  <p className="text-xs text-gray-500">Net monthly profit calculated after COGS and overheads</p>
+                  <span className="text-[10px] font-bold text-[#6B1D2F] uppercase tracking-wider font-mono">PROFITABILITY RUN-RATE</span>
+                  <h3 className="font-bold text-base text-[#1A1817]">NET PROFIT GENERATION</h3>
+                  <p className="text-xs text-[#78726D]">Net monthly profit calculated after COGS and overheads</p>
                 </div>
+                <span className="text-xs font-bold text-[#5C1D24] bg-[#FAF8F5] border border-[#EAE5DC] px-2.5 py-1 rounded-lg">
+                  Avg Margin: 58.4%
+                </span>
               </div>
-              <div className="h-64">
+
+              <div className="h-64 pt-2">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={financialTrend}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                    <XAxis dataKey="month" tick={{ fontSize: 10 }} />
-                    <YAxis tick={{ fontSize: 10 }} />
-                    <Tooltip />
-                    <Bar dataKey="profit" fill="#d97706" radius={[4, 4, 0, 0]} name="Net Profit (₹)" />
+                  <BarChart data={financialTrend} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#EAE5DC" />
+                    <XAxis dataKey="month" tick={{ fontSize: 11, fill: '#78726D' }} axisLine={{ stroke: '#EAE5DC' }} tickLine={false} />
+                    <YAxis
+                      tick={{ fontSize: 11, fill: '#78726D' }}
+                      axisLine={{ stroke: '#EAE5DC' }}
+                      tickLine={false}
+                      tickFormatter={(val) => `₹${(val / 100000).toFixed(1)}L`}
+                    />
+                    <Tooltip
+                      content={({ active, payload, label }: any) => {
+                        if (active && payload && payload.length) {
+                          const val = payload[0]?.value || 0;
+                          return (
+                            <div className="bg-white p-3 rounded-xl border border-[#EAE5DC] shadow-lg text-xs space-y-1">
+                              <p className="font-bold text-[#1A1817] font-mono">{label} 2026</p>
+                              <p className="text-[#5C1D24] font-bold font-mono">
+                                Net Profit: ₹{val.toLocaleString('en-IN')}
+                              </p>
+                              <p className="text-[#78726D] text-[11px]">
+                                Estimated Margin: <span className="font-semibold text-[#1A1817]">~60.2%</span>
+                              </p>
+                            </div>
+                          );
+                        }
+                        return null;
+                      }}
+                    />
+                    <Bar dataKey="profit" radius={[8, 8, 0, 0]} name="Net Profit (₹)">
+                      {financialTrend.map((_, index) => (
+                        <Cell key={`profit-cell-${index}`} fill={index === financialTrend.length - 1 ? '#5C1D24' : '#B8944D'} />
+                      ))}
+                    </Bar>
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -614,186 +709,397 @@ Download full JSON/CSV package from ERP portal.`;
         </div>
       )}
 
-      {/* TAB 2: OFFICIAL GSTR-1 TABLE 4 (EXACT GOVERNMENT FORM FORMAT FROM USER SCREENSHOT) */}
-      {(activeTab === 'overview' || activeTab === 'table4') && (
-        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 space-y-4">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b pb-4">
+      {/* TAB: RAW MATERIAL PROCUREMENT & BOTANICAL EXPENSES */}
+      {activeTab === 'procurement' && (
+        <div className="space-y-6 animate-in fade-in">
+          {/* 4 PROCUREMENT FINANCIAL KPI CARDS */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="bg-white p-5 rounded-2xl border border-[#EAE5DC] shadow-[0_1px_3px_rgba(26,24,23,0.02)] space-y-1">
+              <span className="text-[10px] font-semibold text-[#8C857E] uppercase tracking-wider font-mono flex items-center gap-1.5">
+                <ShoppingCart className="w-3.5 h-3.5 text-[#5C1D24]" /> Total PO Capital Executed
+              </span>
+              <p className="text-2xl font-bold text-[#1A1817]">
+                ₹{Number(procData.totalPOValue || 0).toLocaleString('en-IN')}
+              </p>
+              <p className="text-[11px] font-medium text-[#78726D]">
+                {procData.purchaseOrders?.length || 0} Purchase Orders issued to suppliers
+              </p>
+            </div>
+
+            <div className="bg-white p-5 rounded-2xl border border-[#EAE5DC] shadow-[0_1px_3px_rgba(26,24,23,0.02)] space-y-1">
+              <span className="text-[10px] font-semibold text-[#8C857E] uppercase tracking-wider font-mono flex items-center gap-1.5">
+                <Scale className="w-3.5 h-3.5 text-[#8C6512]" /> Funds Needed For Shortages
+              </span>
+              <p className="text-2xl font-bold text-[#8C6512]">
+                ₹{Number(procData.pendingCommitment || 0).toLocaleString('en-IN')}
+              </p>
+              <p className="text-[11px] font-semibold text-[#8C6512]">
+                {procData.pendingRequests?.length || 0} Requisitions awaiting procurement funds
+              </p>
+            </div>
+
+            <div className="bg-white p-5 rounded-2xl border border-[#EAE5DC] shadow-[0_1px_3px_rgba(26,24,23,0.02)] space-y-1">
+              <span className="text-[10px] font-semibold text-[#8C857E] uppercase tracking-wider font-mono flex items-center gap-1.5">
+                <PackageCheck className="w-3.5 h-3.5 text-[#5C1D24]" /> Goods Received & Inwarded
+              </span>
+              <p className="text-2xl font-bold text-[#1A1817]">
+                ₹{Number(procData.totalReceivedValue || 0).toLocaleString('en-IN')}
+              </p>
+              <p className="text-[11px] font-semibold text-[#5C1D24]">
+                Verified botanical stock in raw warehouse
+              </p>
+            </div>
+
+            <div className="bg-white p-5 rounded-2xl border border-[#EAE5DC] shadow-[0_1px_3px_rgba(26,24,23,0.02)] space-y-1">
+              <span className="text-[10px] font-semibold text-[#8C857E] uppercase tracking-wider font-mono flex items-center gap-1.5">
+                <Truck className="w-3.5 h-3.5 text-[#78726D]" /> Botanical Supplier Payables
+              </span>
+              <p className="text-2xl font-bold text-[#1A1817]">
+                ₹{Number(procData.totalPOValue - procData.totalReceivedValue > 0 ? procData.totalPOValue - procData.totalReceivedValue : 12500).toLocaleString('en-IN')}
+              </p>
+              <p className="text-[11px] font-medium text-[#78726D]">
+                Saurashtra Herbs (Net 30 terms)
+              </p>
+            </div>
+          </div>
+
+          {/* TABLE 1: EXECUTED RAW MATERIAL PURCHASE ORDERS */}
+          <div className="bg-white rounded-2xl border border-[#EAE5DC] shadow-[0_1px_3px_rgba(26,24,23,0.02)] p-6 space-y-4">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-[#EAE5DC] pb-4">
+              <div>
+                <span className="text-[10px] font-bold text-[#6B1D2F] uppercase tracking-wider font-mono">SUPPLIER CASH FLOW</span>
+                <h3 className="font-bold text-base text-[#1A1817] mt-0.5 flex items-center gap-2">
+                  <ShoppingCart className="w-5 h-5 text-[#5C1D24]" /> Executed Purchase Orders & Raw Material Spend
+                </h3>
+                <p className="text-xs text-[#78726D]">
+                  Itemized botanical purchases showing exact funds allocated to raw herb ingredients
+                </p>
+              </div>
+              <span className="px-3 py-1 rounded-full bg-[#FAF8F5] text-[#5C1D24] border border-[#EAE5DC] text-xs font-bold font-mono">
+                {procData.purchaseOrders?.length || 0} POs Total
+              </span>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr className="bg-[#FAF8F5] font-semibold text-[#78726D] uppercase border-b border-[#EAE5DC] text-[10px] font-mono">
+                    <th className="p-3">PO Number</th>
+                    <th className="p-3">Botanical Supplier</th>
+                    <th className="p-3">Herbal Raw Material</th>
+                    <th className="p-3">Quantity</th>
+                    <th className="p-3">Unit Rate</th>
+                    <th className="p-3">Total Amount</th>
+                    <th className="p-3">Inward Status</th>
+                    <th className="p-3 text-right">Payment Status</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[#EAE5DC]">
+                  {procData.purchaseOrders?.length === 0 ? (
+                    <tr>
+                      <td colSpan={8} className="p-8 text-center text-[#A39D96]">
+                        No purchase orders executed yet.
+                      </td>
+                    </tr>
+                  ) : (
+                    procData.purchaseOrders?.map((po: any) => {
+                      const firstItem = po.items?.[0];
+                      const matName = firstItem?.rawMaterial?.name || 'Senna Leaf Powder';
+                      const qty = firstItem?.quantity || 10;
+                      const rate = firstItem?.rate || 120;
+                      const isReceived = po.status === 'RECEIVED';
+
+                      return (
+                        <tr key={po.id} className="hover:bg-[#FAF8F5] transition-colors">
+                          <td className="p-3 font-mono font-bold text-[#1A1817]">{po.poNumber}</td>
+                          <td className="p-3 font-semibold text-[#1A1817]">{po.supplier?.name || 'Saurashtra Herbs & Spices'}</td>
+                          <td className="p-3 font-medium text-[#1A1817] flex items-center gap-1.5">
+                            <span className="w-1.5 h-1.5 rounded-full bg-[#5C1D24]"></span>
+                            {matName}
+                          </td>
+                          <td className="p-3 font-semibold text-[#1A1817]">{qty} KG</td>
+                          <td className="p-3 text-[#5A544F]">₹{rate}/KG</td>
+                          <td className="p-3 font-bold text-[#1A1817]">₹{Number(po.totalAmount || 0).toLocaleString('en-IN')}</td>
+                          <td className="p-3">
+                            <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wider uppercase inline-flex items-center gap-1 ${
+                              isReceived
+                                ? 'bg-[#FAF8F5] text-[#5C1D24] border border-[#EAE5DC]'
+                                : 'bg-[#FAF6ED] text-[#8C6512] border border-[#EAD7B5]'
+                            }`}>
+                              <span className="w-1.5 h-1.5 rounded-full bg-current opacity-70"></span>
+                              {isReceived ? 'RECEIVED (Inwarded)' : po.status}
+                            </span>
+                          </td>
+                          <td className="p-3 text-right">
+                            <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wider uppercase inline-flex items-center gap-1 ${
+                              isReceived
+                                ? 'bg-[#FAF8F5] text-[#5C1D24] border border-[#EAE5DC]'
+                                : 'bg-[#FAF8F5] text-[#78726D] border border-[#EAE5DC]'
+                            }`}>
+                              <span className="w-1.5 h-1.5 rounded-full bg-current opacity-70"></span>
+                              {isReceived ? 'VERIFIED FOR PAYMENT' : 'PENDING DELIVERY'}
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* TABLE 2: PENDING RAW MATERIAL DEMAND & CAPITAL NEEDED */}
+          <div className="bg-white rounded-2xl border border-[#EAE5DC] shadow-[0_1px_3px_rgba(26,24,23,0.02)] p-6 space-y-4">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-[#EAE5DC] pb-4">
+              <div>
+                <span className="text-[10px] font-bold text-[#6B1D2F] uppercase tracking-wider font-mono">CAPITAL REQUISITIONS</span>
+                <h3 className="font-bold text-base text-[#1A1817] mt-0.5 flex items-center gap-2">
+                  <Scale className="w-5 h-5 text-[#5C1D24]" /> Pending Raw Material Capital Commitments (Funds Needed)
+                </h3>
+                <p className="text-xs text-[#78726D]">
+                  Herbal ingredient shortages requested by Production Supervisor that require funding / PO issue
+                </p>
+              </div>
+              <span className="px-3 py-1 rounded-full bg-[#FAF8F5] text-[#8C1D2F] border border-[#EAE5DC] text-xs font-bold font-mono">
+                {procData.pendingRequests?.length || 0} Pending Requests
+              </span>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr className="bg-[#FAF8F5] font-semibold text-[#78726D] uppercase border-b border-[#EAE5DC] text-[10px] font-mono">
+                    <th className="p-3">Requisition ID</th>
+                    <th className="p-3">Herbal Raw Material</th>
+                    <th className="p-3">Shortage Quantity</th>
+                    <th className="p-3">Est. Funds Needed</th>
+                    <th className="p-3">Supplier Assigned</th>
+                    <th className="p-3">Priority</th>
+                    <th className="p-3 text-right">Procurement Action</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[#EAE5DC]">
+                  {procData.pendingRequests?.length === 0 ? (
+                    <tr>
+                      <td colSpan={7} className="p-6 text-center text-[#78726D] font-medium">
+                        ✓ All raw material shortages have been funded and ordered. No pending cash requirements.
+                      </td>
+                    </tr>
+                  ) : (
+                    procData.pendingRequests?.map((req: any) => {
+                      const item = req.items?.[0];
+                      const matName = item?.rawMaterial?.name || 'Raw Herb Material';
+                      const shortQty = item?.shortageQuantity || 10;
+                      const unit = item?.unit || 'KG';
+                      const cost = req.estimatedCost || (shortQty * 120);
+
+                      return (
+                        <tr key={req.id} className="hover:bg-[#FAF8F5] transition-colors">
+                          <td className="p-3 font-mono font-bold text-[#1A1817]">{req.requestNo}</td>
+                          <td className="p-3 font-semibold text-[#1A1817]">{matName}</td>
+                          <td className="p-3 font-bold text-[#8C1D2F]">{shortQty} {unit}</td>
+                          <td className="p-3 font-bold text-[#1A1817]">₹{Number(cost).toLocaleString('en-IN')}</td>
+                          <td className="p-3 font-medium text-[#5A544F]">{req.supplier?.name || 'Saurashtra Herbs & Spices'}</td>
+                          <td className="p-3">
+                            <span className="px-2.5 py-1 rounded-full bg-[#FAF6ED] text-[#8C6512] border border-[#EAD7B5] font-bold text-[10px]">
+                              {req.priority || 'HIGH'}
+                            </span>
+                          </td>
+                          <td className="p-3 text-right">
+                            <Link
+                              href="/dashboard/sales/raw-material-requests"
+                              className="px-3.5 py-1.5 bg-[#1A1817] hover:bg-[#2E2927] text-white font-semibold rounded-xl text-xs inline-flex items-center gap-1.5 cursor-pointer shadow-xs transition-all"
+                            >
+                              <ShoppingCart className="w-3.5 h-3.5 text-[#B8944D]" /> Issue PO & Fund
+                            </Link>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* TAB 2: OFFICIAL GSTR-1 TABLE 4 */}
+      {(activeTab === 'table4') && (
+        <div className="bg-white rounded-2xl border border-[#EAE5DC] shadow-[0_1px_3px_rgba(26,24,23,0.02)] p-6 space-y-4">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-[#EAE5DC] pb-4">
             <div>
-              <h3 className="font-bold text-base text-gray-900">
-                4. Taxable outward supplies made to registered persons (including UIN-holders) other than supplies covered by Table 6
+              <span className="text-[10px] font-bold text-[#6B1D2F] uppercase tracking-wider font-mono">B2B OUTWARD SUPPLIES</span>
+              <h3 className="font-bold text-base text-[#1A1817] mt-0.5">
+                4. Taxable outward supplies made to registered persons (including UIN-holders)
               </h3>
-              <p className="text-xs text-gray-500">(Amount in Rs. for all Tables) • Official Government GSTR-1 Format</p>
+              <p className="text-xs text-[#78726D]">(Amount in Rs. for all Tables) • Official Government GSTR-1 Format</p>
             </div>
 
             {/* DOWNLOAD AND IMPORT ACTION BUTTONS */}
             <div className="flex flex-wrap items-center gap-2">
               <button
                 onClick={() => setShowImportModal(true)}
-                className="px-3 py-1.5 bg-purple-700 hover:bg-purple-800 text-white font-bold text-xs rounded-xl flex items-center gap-1.5 cursor-pointer shadow-xs"
+                className="px-3.5 py-2 bg-[#FAF8F5] hover:bg-[#F2ECE4] text-[#1A1817] font-semibold text-xs rounded-xl border border-[#EAE5DC] flex items-center gap-1.5 cursor-pointer shadow-2xs transition-all"
               >
-                <Upload className="w-3.5 h-3.5" /> Import JSON/CSV
+                <Upload className="w-3.5 h-3.5 text-[#5C1D24]" /> Import JSON/CSV
               </button>
 
               <button
                 onClick={handleDownloadGovtGSTR1JSON}
-                className="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs rounded-xl flex items-center gap-1.5 cursor-pointer shadow-xs"
+                className="px-3.5 py-2 bg-[#1A1817] hover:bg-[#2E2927] text-white font-semibold text-xs rounded-xl flex items-center gap-1.5 cursor-pointer shadow-xs transition-all"
               >
-                <FileCode className="w-3.5 h-3.5" /> Govt GSTR-1 JSON
+                <FileCode className="w-3.5 h-3.5 text-[#B8944D]" /> Govt GSTR-1 JSON
               </button>
 
               <button
                 onClick={handleDownloadTable4CSV}
-                className="px-3 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs rounded-xl flex items-center gap-1.5 cursor-pointer shadow-xs"
+                className="px-3.5 py-2 bg-[#5C1D24] hover:bg-[#4A151C] text-white font-semibold text-xs rounded-xl flex items-center gap-1.5 cursor-pointer shadow-xs transition-all"
               >
                 <FileDown className="w-3.5 h-3.5" /> Download Table 4 CSV
               </button>
             </div>
           </div>
 
-          {/* OFFICIAL TABLE 4 GRID (MATCHING USER SCREENSHOT EXACTLY) */}
-          <div className="overflow-x-auto border border-gray-400 rounded-xl bg-white shadow-xs">
+          {/* OFFICIAL TABLE 4 GRID */}
+          <div className="overflow-x-auto border border-[#EAE5DC] rounded-xl bg-white shadow-xs">
             <table className="w-full text-left text-xs border-collapse">
-              <thead className="bg-gray-100 text-gray-900 font-extrabold border-b border-gray-400 text-[11px]">
+              <thead className="bg-[#FAF8F5] text-[#1A1817] font-bold border-b border-[#EAE5DC] text-[11px] font-mono">
                 <tr>
-                  <th className="p-2 border-r border-gray-400 text-center w-36 align-middle" rowSpan={2}>
+                  <th className="p-2 border-r border-[#EAE5DC] text-center w-36 align-middle" rowSpan={2}>
                     GSTIN/ UIN
                   </th>
-                  <th className="p-2 border-r border-gray-400 text-center" colSpan={3}>
+                  <th className="p-2 border-r border-[#EAE5DC] text-center" colSpan={3}>
                     Invoice details
                   </th>
-                  <th className="p-2 border-r border-gray-400 text-center w-16 align-middle" rowSpan={2}>
+                  <th className="p-2 border-r border-[#EAE5DC] text-center w-16 align-middle" rowSpan={2}>
                     Rate
                   </th>
-                  <th className="p-2 border-r border-gray-400 text-center align-middle" rowSpan={2}>
+                  <th className="p-2 border-r border-[#EAE5DC] text-center align-middle" rowSpan={2}>
                     Taxable value
                   </th>
-                  <th className="p-2 border-r border-gray-400 text-center" colSpan={4}>
+                  <th className="p-2 border-r border-[#EAE5DC] text-center" colSpan={4}>
                     Amount
                   </th>
                   <th className="p-2 text-center align-middle" rowSpan={2}>
-                    Place of Supply (Name of State/UT)
+                    Place of Supply
                   </th>
                 </tr>
-                <tr className="bg-gray-100 border-t border-gray-400 text-[10px]">
-                  <th className="p-1.5 border-r border-gray-400 text-center">No.</th>
-                  <th className="p-1.5 border-r border-gray-400 text-center">Date</th>
-                  <th className="p-1.5 border-r border-gray-400 text-center">Value</th>
-                  <th className="p-1.5 border-r border-gray-400 text-center">Integrated Tax</th>
-                  <th className="p-1.5 border-r border-gray-400 text-center">Central Tax</th>
-                  <th className="p-1.5 border-r border-gray-400 text-center">State / UT Tax</th>
-                  <th className="p-1.5 border-r border-gray-400 text-center">Cess</th>
+                <tr className="bg-[#FAF8F5] border-t border-[#EAE5DC] text-[10px]">
+                  <th className="p-1.5 border-r border-[#EAE5DC] text-center">No.</th>
+                  <th className="p-1.5 border-r border-[#EAE5DC] text-center">Date</th>
+                  <th className="p-1.5 border-r border-[#EAE5DC] text-center">Value</th>
+                  <th className="p-1.5 border-r border-[#EAE5DC] text-center">IGST</th>
+                  <th className="p-1.5 border-r border-[#EAE5DC] text-center">CGST</th>
+                  <th className="p-1.5 border-r border-[#EAE5DC] text-center">SGST</th>
+                  <th className="p-1.5 border-r border-[#EAE5DC] text-center">Cess</th>
                 </tr>
-                <tr className="bg-gray-200/80 font-mono text-[9px] text-center text-gray-700 border-t border-gray-400">
-                  <td className="p-1 border-r border-gray-400 font-bold">1</td>
-                  <td className="p-1 border-r border-gray-400 font-bold">2</td>
-                  <td className="p-1 border-r border-gray-400 font-bold">3</td>
-                  <td className="p-1 border-r border-gray-400 font-bold">4</td>
-                  <td className="p-1 border-r border-gray-400 font-bold">5</td>
-                  <td className="p-1 border-r border-gray-400 font-bold">6</td>
-                  <td className="p-1 border-r border-gray-400 font-bold">7</td>
-                  <td className="p-1 border-r border-gray-400 font-bold">8</td>
-                  <td className="p-1 border-r border-gray-400 font-bold">9</td>
-                  <td className="p-1 border-r border-gray-400 font-bold">10</td>
+                <tr className="bg-[#FAF8F5] font-mono text-[9px] text-center text-[#78726D] border-t border-[#EAE5DC]">
+                  <td className="p-1 border-r border-[#EAE5DC] font-bold">1</td>
+                  <td className="p-1 border-r border-[#EAE5DC] font-bold">2</td>
+                  <td className="p-1 border-r border-[#EAE5DC] font-bold">3</td>
+                  <td className="p-1 border-r border-[#EAE5DC] font-bold">4</td>
+                  <td className="p-1 border-r border-[#EAE5DC] font-bold">5</td>
+                  <td className="p-1 border-r border-[#EAE5DC] font-bold">6</td>
+                  <td className="p-1 border-r border-[#EAE5DC] font-bold">7</td>
+                  <td className="p-1 border-r border-[#EAE5DC] font-bold">8</td>
+                  <td className="p-1 border-r border-[#EAE5DC] font-bold">9</td>
+                  <td className="p-1 border-r border-[#EAE5DC] font-bold">10</td>
                   <td className="p-1 font-bold">11</td>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-300">
+              <tbody className="divide-y divide-[#EAE5DC]">
                 {/* 4A Subsection Header */}
-                <tr className="bg-ayurveda-50/80 font-bold text-ayurveda-950 border-t border-gray-400">
-                  <td colSpan={11} className="p-2 border-b border-gray-400 text-xs">
+                <tr className="bg-[#FAF8F5] font-bold text-[#1A1817] border-t border-[#EAE5DC]">
+                  <td colSpan={11} className="p-2 border-b border-[#EAE5DC] text-xs">
                     4A. Supplies other than those (i) attracting reverse charge and (ii) supplies made through e-commerce operator
                   </td>
                 </tr>
 
                 {invoices.length === 0 ? (
                   <tr>
-                    <td colSpan={11} className="p-4 text-center text-gray-400 italic">
+                    <td colSpan={11} className="p-4 text-center text-[#A39D96] italic">
                       No B2B supplies recorded. Click "Import GSTR-1 Data" to load records.
                     </td>
                   </tr>
                 ) : (
                   invoices.map((inv: any, i: number) => (
-                    <tr key={inv.id || i} className="hover:bg-gray-50/90 text-xs">
-                      <td className="p-2 border-r border-gray-300 font-mono font-bold text-gray-800 text-center">
+                    <tr key={inv.id || i} className="hover:bg-[#FAF8F5] text-xs transition-colors">
+                      <td className="p-2 border-r border-[#EAE5DC] font-mono font-bold text-[#1A1817] text-center">
                         {inv.customer?.gstin || '24AAACG8899K1Z4'}
                       </td>
-                      <td className="p-2 border-r border-gray-300 font-mono font-bold text-ayurveda-900 text-center">
+                      <td className="p-2 border-r border-[#EAE5DC] font-mono font-bold text-[#5C1D24] text-center">
                         {inv.invoiceNumber}
                       </td>
-                      <td className="p-2 border-r border-gray-300 text-center text-gray-600">
+                      <td className="p-2 border-r border-[#EAE5DC] text-center text-[#78726D]">
                         {new Date(inv.createdAt || Date.now()).toLocaleDateString('en-IN')}
                       </td>
-                      <td className="p-2 border-r border-gray-300 font-extrabold text-gray-900 text-right">
-                        ₹{Number(inv.totalAmount || 0).toLocaleString('en-IN')}
+                      <td className="p-2 border-r border-[#EAE5DC] font-bold text-[#1A1817] text-right">
+                        ₹{Number(inv.totalAmount || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })}
                       </td>
-                      <td className="p-2 border-r border-gray-300 text-center font-bold text-gray-700">12.0%</td>
-                      <td className="p-2 border-r border-gray-300 font-black text-gray-900 text-right">
-                        ₹{Number(inv.subtotal || inv.totalAmount * 0.88).toLocaleString('en-IN')}
+                      <td className="p-2 border-r border-[#EAE5DC] text-center font-semibold text-[#5A544F]">12.0%</td>
+                      <td className="p-2 border-r border-[#EAE5DC] font-bold text-[#1A1817] text-right">
+                        ₹{Number(inv.subtotal || inv.totalAmount * 0.88).toLocaleString('en-IN', { maximumFractionDigits: 2 })}
                       </td>
-                      <td className="p-2 border-r border-gray-300 text-right text-gray-500">₹0.00</td>
-                      <td className="p-2 border-r border-gray-300 text-right text-gray-700 font-semibold">
-                        ₹{Number(inv.taxAmount / 2 || 0).toLocaleString('en-IN')}
+                      <td className="p-2 border-r border-[#EAE5DC] text-right text-[#A39D96]">₹0.00</td>
+                      <td className="p-2 border-r border-[#EAE5DC] text-right text-[#5A544F] font-semibold">
+                        ₹{Number(inv.taxAmount / 2 || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })}
                       </td>
-                      <td className="p-2 border-r border-gray-300 text-right text-gray-700 font-semibold">
-                        ₹{Number(inv.taxAmount / 2 || 0).toLocaleString('en-IN')}
+                      <td className="p-2 border-r border-[#EAE5DC] text-right text-[#5A544F] font-semibold">
+                        ₹{Number(inv.taxAmount / 2 || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })}
                       </td>
-                      <td className="p-2 border-r border-gray-300 text-right text-gray-400">₹0.00</td>
-                      <td className="p-2 text-center font-semibold text-gray-800">24-Gujarat</td>
+                      <td className="p-2 border-r border-[#EAE5DC] text-right text-[#A39D96]">₹0.00</td>
+                      <td className="p-2 text-center font-medium text-[#1A1817]">24-Gujarat</td>
                     </tr>
                   ))
                 )}
 
                 {/* 4B Subsection Header */}
-                <tr className="bg-amber-50/80 font-bold text-amber-950 border-t border-gray-400">
-                  <td colSpan={11} className="p-2 border-b border-gray-400 text-xs">
+                <tr className="bg-[#FAF8F5] font-bold text-[#1A1817] border-t border-[#EAE5DC]">
+                  <td colSpan={11} className="p-2 border-b border-[#EAE5DC] text-xs">
                     4B. Supplies attracting tax on reverse charge basis
                   </td>
                 </tr>
                 <tr>
-                  <td colSpan={11} className="p-2 text-center text-gray-400 italic text-[11px]">
+                  <td colSpan={11} className="p-2 text-center text-[#A39D96] italic text-[11px]">
                     Nil reverse charge supplies for this period
                   </td>
                 </tr>
 
                 {/* 4C Subsection Header */}
-                <tr className="bg-blue-50/80 font-bold text-blue-950 border-t border-gray-400">
-                  <td colSpan={11} className="p-2 border-b border-gray-400 text-xs">
-                    4C. Supplies made through e-commerce operator attracting TCS (operator wise, rate wise)
-                  </td>
-                </tr>
-                <tr className="bg-gray-100 font-bold text-gray-700 text-[11px] border-b border-gray-300">
-                  <td className="p-1.5 border-r border-gray-300 text-center">GSTIN of e-commerce operator</td>
-                  <td colSpan={10} className="p-1.5 text-left text-gray-500 font-normal italic">
-                    Operator wise summary details
+                <tr className="bg-[#FAF8F5] font-bold text-[#1A1817] border-t border-[#EAE5DC]">
+                  <td colSpan={11} className="p-2 border-b border-[#EAE5DC] text-xs">
+                    4C. Supplies made through e-commerce operator attracting TCS
                   </td>
                 </tr>
                 <tr>
-                  <td colSpan={11} className="p-2 text-center text-gray-400 italic text-[11px]">
+                  <td colSpan={11} className="p-2 text-center text-[#A39D96] italic text-[11px]">
                     Nil e-commerce operator supplies for this period
                   </td>
                 </tr>
               </tbody>
-              <tfoot className="bg-ayurveda-900 text-white font-black text-xs border-t-2 border-ayurveda-950">
+              <tfoot className="bg-[#1A1817] text-white font-bold text-xs border-t-2 border-[#1A1817]">
                 <tr>
-                  <td className="p-2.5 border-r border-ayurveda-800 text-center uppercase">Total Table 4</td>
-                  <td className="p-2.5 border-r border-ayurveda-800 text-center font-mono">{invoices.length} Invoices</td>
-                  <td className="p-2.5 border-r border-ayurveda-800 text-center">-</td>
-                  <td className="p-2.5 border-r border-ayurveda-800 text-right font-bold text-gold-300">
-                    ₹{totalInvoiceValue.toLocaleString('en-IN')}
+                  <td className="p-2.5 border-r border-white/10 text-center uppercase">Total Table 4</td>
+                  <td className="p-2.5 border-r border-white/10 text-center font-mono">{invoices.length} Invoices</td>
+                  <td className="p-2.5 border-r border-white/10 text-center">-</td>
+                  <td className="p-2.5 border-r border-white/10 text-right font-bold text-[#B8944D]">
+                    ₹{totalInvoiceValue.toLocaleString('en-IN', { maximumFractionDigits: 2 })}
                   </td>
-                  <td className="p-2.5 border-r border-ayurveda-800 text-center">-</td>
-                  <td className="p-2.5 border-r border-ayurveda-800 text-right font-bold text-gold-300">
-                    ₹{totalTaxableValue.toLocaleString('en-IN')}
+                  <td className="p-2.5 border-r border-white/10 text-center">-</td>
+                  <td className="p-2.5 border-r border-white/10 text-right font-bold text-[#B8944D]">
+                    ₹{totalTaxableValue.toLocaleString('en-IN', { maximumFractionDigits: 2 })}
                   </td>
-                  <td className="p-2.5 border-r border-ayurveda-800 text-right font-bold text-emerald-300">₹0.00</td>
-                  <td className="p-2.5 border-r border-ayurveda-800 text-right font-bold text-emerald-300">
-                    ₹{totalCGST.toLocaleString('en-IN')}
+                  <td className="p-2.5 border-r border-white/10 text-right text-gray-400">₹0.00</td>
+                  <td className="p-2.5 border-r border-white/10 text-right text-gray-200">
+                    ₹{totalCGST.toLocaleString('en-IN', { maximumFractionDigits: 2 })}
                   </td>
-                  <td className="p-2.5 border-r border-ayurveda-800 text-right font-bold text-emerald-300">
-                    ₹{totalSGST.toLocaleString('en-IN')}
+                  <td className="p-2.5 border-r border-white/10 text-right text-gray-200">
+                    ₹{totalSGST.toLocaleString('en-IN', { maximumFractionDigits: 2 })}
                   </td>
-                  <td className="p-2.5 border-r border-ayurveda-800 text-right font-bold text-emerald-300">₹0.00</td>
-                  <td className="p-2.5 text-center text-gold-200">24-Gujarat</td>
+                  <td className="p-2.5 border-r border-white/10 text-right text-gray-400">₹0.00</td>
+                  <td className="p-2.5 text-center text-gray-300">24-Gujarat</td>
                 </tr>
               </tfoot>
             </table>
@@ -803,23 +1109,24 @@ Download full JSON/CSV package from ERP portal.`;
 
       {/* TAB 3: HSN SUMMARY TABLE 12 */}
       {(activeTab === 'hsn' || activeTab === 'overview') && (
-        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b pb-4">
+        <div className="bg-white rounded-2xl border border-[#EAE5DC] shadow-[0_1px_3px_rgba(26,24,23,0.02)] p-6 space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#EAE5DC] pb-4">
             <div>
-              <h3 className="font-bold text-base text-gray-900">GSTR-1 Table 12: HSN-Wise Summary of Outward Supplies</h3>
-              <p className="text-xs text-gray-500">Mandatory 8-digit HSN classification breakdown for all manufactured Ayurvedic product lines</p>
+              <span className="text-[10px] font-bold text-[#6B1D2F] uppercase tracking-wider font-mono">OFFICIAL GST CLASSIFICATION</span>
+              <h3 className="font-bold text-base text-[#1A1817] mt-0.5">GSTR-1 Table 12: HSN-Wise Summary of Outward Supplies</h3>
+              <p className="text-xs text-[#78726D]">Mandatory 8-digit HSN classification breakdown for all manufactured Ayurvedic product lines</p>
             </div>
             <button
               onClick={handleDownloadHSNCSV}
-              className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold text-xs rounded-xl flex items-center gap-1.5 cursor-pointer"
+              className="px-3.5 py-2 bg-[#1A1817] hover:bg-[#2E2927] text-white font-semibold text-xs rounded-xl flex items-center gap-1.5 cursor-pointer shadow-xs transition-all self-start sm:self-auto"
             >
-              <FileDown className="w-4 h-4" /> Download Table 12 CSV
+              <FileDown className="w-4 h-4 text-[#B8944D]" /> Download Table 12 CSV
             </button>
           </div>
 
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
-              <thead className="bg-gray-50 text-gray-700 font-bold uppercase text-[10px] tracking-wider border-b">
+              <thead className="bg-[#FAF8F5] text-[#78726D] font-semibold uppercase text-[10px] tracking-wider border-b border-[#EAE5DC] font-mono">
                 <tr>
                   <th className="p-3">HSN Code</th>
                   <th className="p-3">Description</th>
@@ -832,18 +1139,18 @@ Download full JSON/CSV package from ERP portal.`;
                   <th className="p-3 text-right">Total Tax</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-200">
+              <tbody className="divide-y divide-[#EAE5DC]">
                 {(gstr1.hsnSummary || []).map((h: any, i: number) => (
-                  <tr key={i} className="hover:bg-gray-50">
-                    <td className="p-3 font-mono font-extrabold text-gold-700">{h.hsn}</td>
-                    <td className="p-3 font-bold text-gray-900">{h.desc}</td>
-                    <td className="p-3 font-semibold text-gray-800">{h.qty}</td>
-                    <td className="p-3 text-gray-500 font-semibold">{h.unit}</td>
-                    <td className="p-3 font-bold text-gray-900">₹{h.taxable.toLocaleString('en-IN')}</td>
-                    <td className="p-3 text-gray-600">₹{h.cgst.toLocaleString('en-IN')}</td>
-                    <td className="p-3 text-gray-600">₹{h.sgst.toLocaleString('en-IN')}</td>
-                    <td className="p-3 text-gray-600">₹{h.igst.toLocaleString('en-IN')}</td>
-                    <td className="p-3 font-black text-emerald-700 text-right">₹{h.totalTax.toLocaleString('en-IN')}</td>
+                  <tr key={i} className="hover:bg-[#FAF8F5] transition-colors">
+                    <td className="p-3 font-mono font-bold text-[#5C1D24]">{h.hsn}</td>
+                    <td className="p-3 font-semibold text-[#1A1817]">{h.desc}</td>
+                    <td className="p-3 font-medium text-[#1A1817]">{h.qty}</td>
+                    <td className="p-3 text-[#78726D] font-medium">{h.unit}</td>
+                    <td className="p-3 font-bold text-[#1A1817]">₹{h.taxable.toLocaleString('en-IN')}</td>
+                    <td className="p-3 text-[#5A544F]">₹{h.cgst.toLocaleString('en-IN')}</td>
+                    <td className="p-3 text-[#5A544F]">₹{h.sgst.toLocaleString('en-IN')}</td>
+                    <td className="p-3 text-[#5A544F]">₹{h.igst.toLocaleString('en-IN')}</td>
+                    <td className="p-3 font-bold text-[#5C1D24] text-right">₹{h.totalTax.toLocaleString('en-IN')}</td>
                   </tr>
                 ))}
               </tbody>
@@ -854,23 +1161,24 @@ Download full JSON/CSV package from ERP portal.`;
 
       {/* TAB 4: DOCUMENTS ISSUED TABLE 13 */}
       {(activeTab === 'docs' || activeTab === 'overview') && (
-        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b pb-4">
+        <div className="bg-white rounded-2xl border border-[#EAE5DC] shadow-[0_1px_3px_rgba(26,24,23,0.02)] p-6 space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#EAE5DC] pb-4">
             <div>
-              <h3 className="font-bold text-base text-gray-900">GSTR-1 Table 13: Documents Issued During Tax Period</h3>
-              <p className="text-xs text-gray-500">Sequential document series validation for sales invoices, credit notes & debit notes</p>
+              <span className="text-[10px] font-bold text-[#6B1D2F] uppercase tracking-wider font-mono">DOCUMENT AUDIT TRAIL</span>
+              <h3 className="font-bold text-base text-[#1A1817] mt-0.5">GSTR-1 Table 13: Documents Issued During Tax Period</h3>
+              <p className="text-xs text-[#78726D]">Sequential document series validation for sales invoices, credit notes & debit notes</p>
             </div>
             <button
               onClick={handleDownloadDocsCSV}
-              className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold text-xs rounded-xl flex items-center gap-1.5 cursor-pointer"
+              className="px-3.5 py-2 bg-[#1A1817] hover:bg-[#2E2927] text-white font-semibold text-xs rounded-xl flex items-center gap-1.5 cursor-pointer shadow-xs transition-all self-start sm:self-auto"
             >
-              <FileDown className="w-4 h-4" /> Download Table 13 CSV
+              <FileDown className="w-4 h-4 text-[#B8944D]" /> Download Table 13 CSV
             </button>
           </div>
 
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
-              <thead className="bg-gray-50 text-gray-700 font-bold uppercase text-[10px] tracking-wider border-b">
+              <thead className="bg-[#FAF8F5] text-[#78726D] font-semibold uppercase text-[10px] tracking-wider border-b border-[#EAE5DC] font-mono">
                 <tr>
                   <th className="p-3">Nature of Document</th>
                   <th className="p-3">From Serial No</th>
@@ -880,15 +1188,15 @@ Download full JSON/CSV package from ERP portal.`;
                   <th className="p-3 text-right">Net Issued</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-200">
+              <tbody className="divide-y divide-[#EAE5DC]">
                 {(gstr1.docSummary || []).map((doc: any, idx: number) => (
-                  <tr key={idx} className="hover:bg-gray-50">
-                    <td className="p-3 font-bold text-gray-900">{doc.docType}</td>
-                    <td className="p-3 font-mono text-gray-700">{doc.fromNo}</td>
-                    <td className="p-3 font-mono text-gray-700">{doc.toNo}</td>
-                    <td className="p-3 font-extrabold text-gray-900">{doc.total}</td>
-                    <td className="p-3 font-semibold text-rose-700">{doc.cancelled}</td>
-                    <td className="p-3 font-black text-emerald-700 text-right">{doc.total - doc.cancelled}</td>
+                  <tr key={idx} className="hover:bg-[#FAF8F5] transition-colors">
+                    <td className="p-3 font-semibold text-[#1A1817]">{doc.docType}</td>
+                    <td className="p-3 font-mono text-[#5A544F]">{doc.fromNo}</td>
+                    <td className="p-3 font-mono text-[#5A544F]">{doc.toNo}</td>
+                    <td className="p-3 font-bold text-[#1A1817]">{doc.total}</td>
+                    <td className="p-3 font-semibold text-[#8C1D2F]">{doc.cancelled}</td>
+                    <td className="p-3 font-bold text-[#5C1D24] text-right">{doc.total - doc.cancelled}</td>
                   </tr>
                 ))}
               </tbody>
@@ -899,15 +1207,16 @@ Download full JSON/CSV package from ERP portal.`;
 
       {/* TAB 5: PRODUCT PROFITABILITY */}
       {activeTab === 'profitability' && (
-        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 space-y-4">
-          <div className="border-b pb-4">
-            <h3 className="font-bold text-base text-gray-900">Calculated Product Profitability (BOM & Batch Costing)</h3>
-            <p className="text-xs text-gray-500">Calculated from actual raw material prices, batch yield and packaging overheads</p>
+        <div className="bg-white rounded-2xl border border-[#EAE5DC] shadow-[0_1px_3px_rgba(26,24,23,0.02)] p-6 space-y-4">
+          <div className="border-b border-[#EAE5DC] pb-4">
+            <span className="text-[10px] font-bold text-[#6B1D2F] uppercase tracking-wider font-mono">BOM & BATCH COSTING</span>
+            <h3 className="font-bold text-base text-[#1A1817] mt-0.5">Calculated Product Profitability</h3>
+            <p className="text-xs text-[#78726D]">Calculated from actual raw material botanical prices, batch yield and packaging overheads</p>
           </div>
 
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
-              <thead className="bg-gray-50 font-bold text-gray-500 border-b uppercase text-[10px]">
+              <thead className="bg-[#FAF8F5] font-semibold text-[#78726D] border-b border-[#EAE5DC] uppercase text-[10px] font-mono">
                 <tr>
                   <th className="p-3">Product Name</th>
                   <th className="p-3">SKU</th>
@@ -919,18 +1228,24 @@ Download full JSON/CSV package from ERP portal.`;
                   <th className="p-3 text-right">Gross Margin %</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-200">
+              <tbody className="divide-y divide-[#EAE5DC]">
                 {profitability.map((p: any) => (
-                  <tr key={p.id} className="hover:bg-gray-50">
-                    <td className="p-3 font-bold text-gray-900">{p.name}</td>
-                    <td className="p-3 font-mono text-gray-500">{p.sku}</td>
-                    <td className="p-3 font-bold text-gray-800">₹{p.sellingPrice}</td>
-                    <td className="p-3 text-gray-600">₹{p.unitRawMaterialCost}</td>
-                    <td className="p-3 text-gray-600">₹{p.unitPackagingCost}</td>
-                    <td className="p-3 font-semibold text-rose-700">₹{p.totalUnitCost}</td>
-                    <td className="p-3 font-black text-emerald-700">₹{p.grossProfitPerUnit}</td>
-                    <td className="p-3 font-black text-right">
-                      <span className="px-2.5 py-0.5 rounded bg-emerald-100 text-emerald-900 text-[10px]">
+                  <tr key={p.id} className="hover:bg-[#FAF8F5] transition-colors">
+                    <td className="p-3 font-semibold text-[#1A1817]">{p.name}</td>
+                    <td className="p-3 font-mono text-[#78726D]">{p.sku}</td>
+                    <td className="p-3 font-bold text-[#1A1817]">₹{p.sellingPrice}</td>
+                    <td className="p-3 text-[#5A544F]">₹{p.unitRawMaterialCost}</td>
+                    <td className="p-3 text-[#5A544F]">₹{p.unitPackagingCost}</td>
+                    <td className="p-3 font-semibold text-[#8C1D2F]">₹{p.totalUnitCost}</td>
+                    <td className={`p-3 font-bold ${Number(p.grossProfitPerUnit) < 0 ? 'text-[#8C1D2F]' : 'text-[#5C1D24]'}`}>
+                      {Number(p.grossProfitPerUnit) < 0 ? `-₹${Math.abs(Number(p.grossProfitPerUnit))}` : `₹${p.grossProfitPerUnit}`}
+                    </td>
+                    <td className="p-3 text-right">
+                      <span className={`px-2.5 py-1 rounded-full border font-bold text-[10px] ${
+                        Number(p.marginPercentage) < 0
+                          ? 'bg-[#FDF2F4] text-[#8C1D2F] border-[#F7D2D9]'
+                          : 'bg-[#FAF8F5] text-[#5C1D24] border-[#EAE5DC]'
+                      }`}>
                         {p.marginPercentage}%
                       </span>
                     </td>
@@ -944,23 +1259,24 @@ Download full JSON/CSV package from ERP portal.`;
 
       {/* TAB 6: CA EXPORT HISTORY TABLE */}
       {activeTab === 'caHistory' && (
-        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b pb-4">
+        <div className="bg-white rounded-2xl border border-[#EAE5DC] shadow-[0_1px_3px_rgba(26,24,23,0.02)] p-6 space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#EAE5DC] pb-4">
             <div>
-              <h3 className="font-bold text-base text-gray-900">CA Audit Package Export & WhatsApp History</h3>
-              <p className="text-xs text-gray-500">Historical audit trail of financial & GST packages dispatched to target CA contact +91 {caPhoneNumber}</p>
+              <span className="text-[10px] font-bold text-[#6B1D2F] uppercase tracking-wider font-mono">AUDIT TRAIL LOG</span>
+              <h3 className="font-bold text-base text-[#1A1817] mt-0.5">CA Audit Package Export & WhatsApp History</h3>
+              <p className="text-xs text-[#78726D]">Historical audit trail of financial & GST packages dispatched to target CA contact +91 {caPhoneNumber}</p>
             </div>
             <button
               onClick={handleDownloadCAPackageJSON}
-              className="px-3.5 py-2 bg-gradient-to-r from-gold-500 to-amber-400 text-ayurveda-950 font-black text-xs rounded-xl flex items-center gap-1.5 cursor-pointer"
+              className="px-3.5 py-2 bg-[#1A1817] hover:bg-[#2E2927] text-white font-semibold text-xs rounded-xl flex items-center gap-1.5 cursor-pointer shadow-xs transition-all"
             >
-              <Download className="w-4 h-4" /> Download Complete CA Package (.JSON)
+              <Download className="w-4 h-4 text-[#B8944D]" /> Download Complete CA Package (.JSON)
             </button>
           </div>
 
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
-              <thead className="bg-gray-50 text-gray-700 font-bold uppercase text-[10px] tracking-wider border-b">
+              <thead className="bg-[#FAF8F5] text-[#78726D] font-semibold uppercase text-[10px] tracking-wider border-b border-[#EAE5DC] font-mono">
                 <tr>
                   <th className="p-3">Package ID</th>
                   <th className="p-3">Period</th>
@@ -971,29 +1287,29 @@ Download full JSON/CSV package from ERP portal.`;
                   <th className="p-3 text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-200">
+              <tbody className="divide-y divide-[#EAE5DC]">
                 {caHistory.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="p-6 text-center text-gray-400">No CA export packages generated yet</td>
+                    <td colSpan={7} className="p-6 text-center text-[#A39D96]">No CA export packages generated yet</td>
                   </tr>
                 ) : (
                   caHistory.map((exp: any) => (
-                    <tr key={exp.id} className="hover:bg-gray-50">
-                      <td className="p-3 font-extrabold text-gold-700">{exp.exportNo}</td>
-                      <td className="p-3 font-bold text-gray-800">{exp.period}</td>
-                      <td className="p-3 text-gray-500">{new Date(exp.generatedAt).toLocaleString()}</td>
-                      <td className="p-3 font-mono text-gray-800">+{caPhoneNumber}</td>
+                    <tr key={exp.id} className="hover:bg-[#FAF8F5] transition-colors">
+                      <td className="p-3 font-mono font-bold text-[#5C1D24]">{exp.exportNo}</td>
+                      <td className="p-3 font-semibold text-[#1A1817]">{exp.period}</td>
+                      <td className="p-3 text-[#78726D]">{new Date(exp.generatedAt).toLocaleString('en-IN')}</td>
+                      <td className="p-3 font-mono text-[#1A1817]">+{caPhoneNumber}</td>
                       <td className="p-3">
-                        <span className="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 font-extrabold text-[10px]">
+                        <span className="px-2.5 py-0.5 rounded-full bg-[#FAF8F5] text-[#5C1D24] border border-[#EAE5DC] font-bold text-[10px]">
                           ✓ PASSED
                         </span>
                       </td>
                       <td className="p-3">
                         <span
-                          className={`px-2 py-0.5 rounded font-extrabold text-[10px] ${
+                          className={`px-2.5 py-0.5 rounded-full font-bold text-[10px] ${
                             exp.status === 'DELIVERED'
-                              ? 'bg-emerald-100 text-emerald-800'
-                              : 'bg-rose-100 text-rose-800'
+                              ? 'bg-[#FAF8F5] text-[#5C1D24] border border-[#EAE5DC]'
+                              : 'bg-[#FDF2F4] text-[#8C1D2F] border border-[#F7D2D9]'
                           }`}
                         >
                           {exp.status}
@@ -1002,7 +1318,7 @@ Download full JSON/CSV package from ERP portal.`;
                       <td className="p-3 text-right space-x-1">
                         <button
                           onClick={handleDownloadCAPackageJSON}
-                          className="px-2.5 py-1 bg-gray-100 text-gray-800 font-bold text-[10px] rounded hover:bg-gray-200 cursor-pointer"
+                          className="px-2.5 py-1 bg-[#FAF8F5] hover:bg-[#F2ECE4] text-[#1A1817] font-semibold text-[10px] rounded-lg border border-[#EAE5DC] cursor-pointer"
                         >
                           Download JSON
                         </button>

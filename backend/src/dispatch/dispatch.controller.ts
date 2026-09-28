@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Param, Body, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Param, Body, UseGuards } from '@nestjs/common';
 import { DispatchService } from './dispatch.service';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 
@@ -25,5 +25,10 @@ export class DispatchController {
   @Post(':id/deliver')
   async confirmDelivery(@Param('id') id: string, @Body() data: any) {
     return this.dispatchService.confirmDelivery(id, data);
+  }
+
+  @Patch(':id')
+  async updateDispatch(@Param('id') id: string, @Body() data: any) {
+    return this.dispatchService.updateDispatch(id, data);
   }
 }
