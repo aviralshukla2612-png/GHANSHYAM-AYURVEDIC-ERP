@@ -15,9 +15,13 @@ cd /app/backend
 echo "📦 Running Prisma DB push ($DATABASE_URL)..."
 npx prisma db push --accept-data-loss --skip-generate
 
-# Ensure initial seed data is applied cleanly via compiled JS
+# Ensure initial seed data is applied cleanly via compiled JS or ts-node
 echo "🌱 Running Prisma Database Seed..."
-node dist/prisma/seed.js || true
+if [ -f "dist/prisma/seed.js" ]; then
+  node dist/prisma/seed.js || true
+else
+  npx ts-node prisma/seed.ts || true
+fi
 
 # Start NestJS backend in background
 echo "⚡ Starting NestJS Backend Server on port 5000..."
