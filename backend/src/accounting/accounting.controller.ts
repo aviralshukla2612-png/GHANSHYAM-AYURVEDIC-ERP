@@ -42,8 +42,19 @@ export class AccountingController {
     return this.accountingService.getGSTR1();
   }
 
+  @Post('gstr1/snapshot')
+  async createSnapshot(@Body() data: { period?: string; userId?: string }) {
+    return this.accountingService.createSnapshot(data?.period, data?.userId);
+  }
+
+  @Get('gstr1/snapshots')
+  async getSnapshots() {
+    return this.accountingService.getSnapshots();
+  }
+
   @Get('procurement-finances')
   async getProcurementFinances() {
     return this.accountingService.getProcurementFinances();
   }
 }
+
