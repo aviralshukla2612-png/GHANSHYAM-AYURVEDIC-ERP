@@ -8,9 +8,15 @@ import * as cookieParser from 'cookie-parser';
 async function bootstrap() {
   if (process.env.NODE_ENV === 'staging' || process.env.NODE_ENV === 'production') {
     const url = process.env.DATABASE_URL ?? '';
-    if (!url || (!url.startsWith('postgresql://') && !url.startsWith('postgres://'))) {
+    if (
+      !url ||
+      (!url.startsWith('postgresql://') &&
+        !url.startsWith('postgres://') &&
+        !url.startsWith('file:') &&
+        !url.startsWith('sqlite:'))
+    ) {
       throw new Error(
-        'FAIL FAST: DATABASE_URL must explicitly start with postgresql:// or postgres:// in staging/production!'
+        'FAIL FAST: DATABASE_URL must explicitly start with postgresql://, postgres://, or file: in staging/production!'
       );
     }
   }
