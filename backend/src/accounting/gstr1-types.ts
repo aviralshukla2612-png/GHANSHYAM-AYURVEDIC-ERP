@@ -1,4 +1,4 @@
-// Strongly Typed Contracts for GSTR-1 Return Mapping, Validation, and Snapshots
+// Strongly Typed Contracts for GSTR-1 Mapper, Validation Engine, Reconciliation, and Snapshot Integrity
 
 export interface B2BRow {
   gstin: string;
@@ -56,6 +56,7 @@ export interface NilRatedRow {
 }
 
 export interface CreditDebitNoteRow {
+  id?: string;
   gstin?: string;
   customerName: string;
   noteType: 'CREDIT' | 'DEBIT';
@@ -67,6 +68,7 @@ export interface CreditDebitNoteRow {
   cgst: number;
   sgst: number;
   igst: number;
+  reason?: string;
 }
 
 export interface HsnRow {
@@ -123,9 +125,9 @@ export interface Gstr1ReturnData {
 }
 
 export interface ValidationErrorItem {
-  code: string; // e.g. ERR_GSTIN_INVALID, ERR_HSN_MISMATCH, ERR_DOC_GAP
+  code: string; // e.g. ERR_GSTIN_INVALID, ERR_HSN_MISMATCH, ERR_DOC_GAP, ERR_LEDGER_MISMATCH
   severity: 'ERROR' | 'WARNING';
-  entity: 'INVOICE' | 'CUSTOMER' | 'HSN' | 'DOCUMENT';
+  entity: 'INVOICE' | 'CUSTOMER' | 'HSN' | 'DOCUMENT' | 'LEDGER';
   entityId?: string;
   entityNumber?: string;
   field?: string;
@@ -144,15 +146,43 @@ export interface Gstr1ValidationReport {
   checkedAt: string;
 }
 
+export interface InvoiceReconciliationItem {
+  invoiceNumber: string;
+  invoiceTaxable: number;
+  ledgerTaxable: number;
+  taxableDiff: number;
+  invoiceTax: number;
+  ledgerTax: number;
+  taxDiff: number;
+  status: 'MATCHED' | 'TAXABLE_MISMATCH' | 'TAX_MISMATCH' | 'MISSING_LEDGER';
+}
+
+export interface Gstr1ReconciliationReport {
+  period: string;
+  status: 'RECONCILED' | 'UNEXPLAINED_VARIANCES';
+  totalInvoiceTurnover: number;
+  gstr1ReportedTurnover: number;
+  turnoverVariance: number;
+  totalInvoiceTax: number;
+  gstr1ReportedTax: number;
+  taxVariance: number;
+  invoiceReconciliations: InvoiceReconciliationItem[];
+  unexplainedNotes: string[];
+}
+
 export interface Gstr1Snapshot {
   id: string;
   period: string;
-  status: 'GENERATED' | 'FILED' | 'SUPERSEDE';
+  status: 'DRAFT' | 'FROZEN' | 'INVALIDATED';
   generatedAt: string;
+  frozenAt?: string;
   generatedBy: string;
-  dataHash: string; // Hash to check if source sales data changed post snapshot
+  sourceDataHash: string; // Hash of source sales invoices
+  payloadHash: string;    // Hash of mapped GSTR-1 payload
   sourceInvoiceCount: number;
   returnData: Gstr1ReturnData;
   validationReport: Gstr1ValidationReport;
-  isStale?: boolean; // True if invoices edited post snapshot creation
+  reconciliationReport: Gstr1ReconciliationReport;
+  integrityStatus: 'INTEGRITY_VERIFIED' | 'SNAPSHOT_INVALIDATED';
+  modifiedInvoices?: string[];
 }

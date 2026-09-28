@@ -52,6 +52,16 @@ export class AccountingController {
     return this.accountingService.getSnapshots();
   }
 
+  @Get('gstr1/reconcile')
+  async reconcileGSTR1() {
+    return this.accountingService.reconcileGSTR1();
+  }
+
+  @Get('credit-debit-notes')
+  async getCreditDebitNotes() {
+    return this.accountingService.getCreditDebitNotes();
+  }
+
   @Get('procurement-finances')
   async getProcurementFinances() {
     return this.accountingService.getProcurementFinances();

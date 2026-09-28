@@ -3,6 +3,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { GstEngineService } from './gst-engine.service';
 import { Gstr1MapperService } from './gstr1-mapper.service';
 import { Gstr1ValidationService } from './gstr1-validation.service';
+import { GstReconciliationService } from './gst-reconciliation.service';
 import { roundCurrency } from './gst-config';
 
 @Injectable()
@@ -12,7 +13,9 @@ export class AccountingService {
     private gstEngine: GstEngineService,
     private mapperService: Gstr1MapperService,
     private validationService: Gstr1ValidationService,
+    private reconciliationService: GstReconciliationService,
   ) {}
+
 
 
 
@@ -216,6 +219,22 @@ export class AccountingService {
     return {
       success: true,
       data: snapshots,
+    };
+  }
+
+  async reconcileGSTR1(period: string = 'September 2026') {
+    const report = await this.reconciliationService.reconcileInvoiceVsLedger(period);
+    return {
+      success: true,
+      data: report,
+    };
+  }
+
+  async getCreditDebitNotes(period: string = 'September 2026') {
+    const cdnr = await this.reconciliationService.getCreditDebitNotes(period);
+    return {
+      success: true,
+      data: cdnr,
     };
   }
 
