@@ -37,11 +37,16 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       throw new UnauthorizedException('User is inactive or not found');
     }
 
-    const roles = user.userRoles.map((ur) => ur.role.name);
+    const roles = (user.userRoles || [])
+      .map((ur) => ur?.role?.name)
+      .filter((name): name is string => Boolean(name));
+
     const permissions = new Set<string>();
-    user.userRoles.forEach((ur) => {
-      ur.role.rolePermissions.forEach((rp) => {
-        permissions.add(rp.permission.code);
+    (user.userRoles || []).forEach((ur) => {
+      ur?.role?.rolePermissions?.forEach((rp) => {
+        if (rp?.permission?.code) {
+          permissions.add(rp.permission.code);
+        }
       });
     });
 

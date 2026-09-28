@@ -24,7 +24,9 @@ export class UsersService {
         designation: u.designation,
         employeeId: u.employeeId,
         isActive: u.isActive,
-        roles: u.userRoles.map((ur) => ur.role.name),
+        roles: (u.userRoles || [])
+          .map((ur) => ur?.role?.name)
+          .filter((name): name is string => Boolean(name)),
         createdAt: u.createdAt,
       })),
     };

@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Get, Req, UseGuards } from '@nestjs/common';
+import { Controller, Post, Body, Get, Req, UseGuards, UnauthorizedException } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
@@ -10,8 +10,16 @@ export class AuthController {
 
   @Post('login')
   async login(@Body() loginDto: LoginDto, @Req() req: Request) {
-    const ip = req.ip || req.socket.remoteAddress;
-    return this.authService.login(loginDto, ip);
+    try {
+      const ip = req.ip || req.socket.remoteAddress;
+      return await this.authService.login(loginDto, ip);
+    } catch (err: any) {
+      if (err?.status && err?.status < 500) {
+        throw err;
+      }
+      console.error('[AUTH LOGIN ERROR]', err);
+      throw new UnauthorizedException(err?.message || 'Authentication failed. Please check credentials.');
+    }
   }
 
   @UseGuards(JwtAuthGuard)

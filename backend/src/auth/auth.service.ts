@@ -35,7 +35,12 @@ export class AuthService {
       throw new UnauthorizedException('Invalid email or password');
     }
 
-    const isMatch = await bcrypt.compare(loginDto.password, user.password);
+    let isMatch = false;
+    try {
+      isMatch = await bcrypt.compare(loginDto.password || '', user.password || '');
+    } catch {
+      isMatch = false;
+    }
     if (!isMatch) {
       throw new UnauthorizedException('Invalid email or password');
     }
@@ -44,11 +49,16 @@ export class AuthService {
       throw new ForbiddenException('Account is deactivated');
     }
 
-    const roles = user.userRoles.map((ur) => ur.role.name);
+    const roles = (user.userRoles || [])
+      .map((ur) => ur?.role?.name)
+      .filter((name): name is string => Boolean(name));
+
     const permissions = new Set<string>();
-    user.userRoles.forEach((ur) => {
-      ur.role.rolePermissions.forEach((rp) => {
-        permissions.add(rp.permission.code);
+    (user.userRoles || []).forEach((ur) => {
+      ur?.role?.rolePermissions?.forEach((rp) => {
+        if (rp?.permission?.code) {
+          permissions.add(rp.permission.code);
+        }
       });
     });
 
@@ -145,11 +155,16 @@ export class AuthService {
 
     if (!user) throw new UnauthorizedException('User not found');
 
-    const roles = user.userRoles.map((ur) => ur.role.name);
+    const roles = (user.userRoles || [])
+      .map((ur) => ur?.role?.name)
+      .filter((name): name is string => Boolean(name));
+
     const permissions = new Set<string>();
-    user.userRoles.forEach((ur) => {
-      ur.role.rolePermissions.forEach((rp) => {
-        permissions.add(rp.permission.code);
+    (user.userRoles || []).forEach((ur) => {
+      ur?.role?.rolePermissions?.forEach((rp) => {
+        if (rp?.permission?.code) {
+          permissions.add(rp.permission.code);
+        }
       });
     });
 
