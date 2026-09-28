@@ -136,12 +136,47 @@ export class Gstr1ValidationService {
     };
   }
 
-  // Create an Immutable Reporting Snapshot of GSTR-1 (Phase 6 Integrity)
+  // Helper to compute hash of GST-relevant source fields (ignoring non-tax fields like phone/notes)
+  private async computeGstSourceDataHash(): Promise<{ hash: string; count: number }> {
+    const invoices = await this.prisma.salesInvoice.findMany({
+      select: {
+        id: true,
+        invoiceNumber: true,
+        customerId: true,
+        subtotal: true,
+        cgstAmount: true,
+        sgstAmount: true,
+        igstAmount: true,
+        totalAmount: true,
+        status: true,
+        customer: {
+          select: {
+            gstin: true,
+            state: true,
+            customerType: true,
+          },
+        },
+        items: {
+          select: {
+            productId: true,
+            quantity: true,
+            taxAmount: true,
+            totalAmount: true,
+          },
+        },
+      },
+      orderBy: { id: 'asc' },
+    });
+
+    const hash = createHash('sha256').update(JSON.stringify(invoices)).digest('hex');
+    return { hash, count: invoices.length };
+  }
+
+  // Create an Immutable Reporting Snapshot of GSTR-1 (Phase 6 & 7 Integrity)
   async createSnapshot(period: string = 'September 2026', userId: string = 'System Accountant'): Promise<Gstr1Snapshot> {
     const returnData = await this.mapperService.mapGstr1Return(period);
     const validationReport = await this.validateGstr1Return(period);
 
-    // Dummy empty reconciliation report for snapshot initial state
     const reconciliationReport: Gstr1ReconciliationReport = {
       period,
       status: 'RECONCILED',
@@ -155,9 +190,8 @@ export class Gstr1ValidationService {
       unexplainedNotes: [],
     };
 
-    // Dual SHA-256 Hashing: Source Sales Data Hash & Mapped Return Payload Hash
-    const invoices = await this.prisma.salesInvoice.findMany({ select: { id: true, totalAmount: true, updatedAt: true } });
-    const sourceDataHash = createHash('sha256').update(JSON.stringify(invoices)).digest('hex');
+    // Dual SHA-256 Hashing: Selective GST Source Data Hash & Mapped Return Payload Hash
+    const { hash: sourceDataHash, count: sourceInvoiceCount } = await this.computeGstSourceDataHash();
     const payloadHash = createHash('sha256').update(JSON.stringify(returnData)).digest('hex');
 
     const snapshotId = `SNAP-GSTR1-${period.replace(/\s+/g, '-')}-${Date.now()}`;
@@ -170,7 +204,7 @@ export class Gstr1ValidationService {
       generatedBy: userId,
       sourceDataHash,
       payloadHash,
-      sourceInvoiceCount: invoices.length,
+      sourceInvoiceCount,
       returnData,
       validationReport,
       reconciliationReport,
@@ -185,8 +219,7 @@ export class Gstr1ValidationService {
 
   // Get and Verify Snapshot Integrity against Live DB
   async getSnapshots(period: string = 'September 2026'): Promise<Gstr1Snapshot[]> {
-    const invoices = await this.prisma.salesInvoice.findMany({ select: { id: true, totalAmount: true, updatedAt: true } });
-    const currentSourceHash = createHash('sha256').update(JSON.stringify(invoices)).digest('hex');
+    const { hash: currentSourceHash } = await this.computeGstSourceDataHash();
 
     const list = Array.from(this.snapshots.values()).filter((s) => s.period === period);
     return list.map((snap) => {

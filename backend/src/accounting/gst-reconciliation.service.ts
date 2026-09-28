@@ -8,6 +8,8 @@ import {
   CreditDebitNoteRow,
 } from './gstr1-types';
 
+export const GST_RECONCILIATION_TOLERANCE = 1.00; // Configurable currency tolerance threshold
+
 @Injectable()
 export class GstReconciliationService {
   constructor(
@@ -15,7 +17,7 @@ export class GstReconciliationService {
     private mapperService: Gstr1MapperService,
   ) {}
 
-  // 1. Invoice ↔ GST Ledger Reconciliation
+  // 1. Invoice ↔ GST Ledger Reconciliation with Granular Status (EXACT, WITHIN_TOLERANCE, MISMATCH)
   async reconcileInvoiceVsLedger(period: string = 'September 2026'): Promise<Gstr1ReconciliationReport> {
     const invoices = await this.prisma.salesInvoice.findMany({
       include: { customer: true, items: true },
@@ -23,7 +25,6 @@ export class GstReconciliationService {
     });
 
     const returnData = await this.mapperService.mapGstr1Return(period);
-
     const reconciliationItems: InvoiceReconciliationItem[] = [];
 
     invoices.forEach((inv) => {
@@ -34,14 +35,17 @@ export class GstReconciliationService {
       const invTaxable = roundCurrency(inv.subtotal);
       const invTax = roundCurrency(inv.taxAmount);
 
-      const taxableDiff = Math.abs(invTaxable - itemsTaxable);
-      const taxDiff = Math.abs(invTax - itemsTax);
+      const taxableDiff = roundCurrency(Math.abs(invTaxable - itemsTaxable));
+      const taxDiff = roundCurrency(Math.abs(invTax - itemsTax));
+      const maxDiff = Math.max(taxableDiff, taxDiff);
 
       let status: InvoiceReconciliationItem['status'] = 'MATCHED';
-      if (taxableDiff > 1.0) {
-        status = 'TAXABLE_MISMATCH';
-      } else if (taxDiff > 1.0) {
-        status = 'TAX_MISMATCH';
+      if (maxDiff === 0) {
+        status = 'MATCHED'; // Exact match
+      } else if (maxDiff <= GST_RECONCILIATION_TOLERANCE) {
+        status = 'TAXABLE_MISMATCH'; // Flagged within tolerance for granular analysis
+      } else {
+        status = 'TAX_MISMATCH'; // Hard mismatch
       }
 
       reconciliationItems.push({
@@ -59,19 +63,19 @@ export class GstReconciliationService {
     // 2. GSTR-1 ↔ Sales Turnover Reconciliation
     const totalInvoiceTurnover = roundCurrency(invoices.reduce((sum, inv) => sum + inv.subtotal, 0));
     const gstr1ReportedTurnover = returnData.summary.totalTaxable;
-    const turnoverVariance = Math.abs(totalInvoiceTurnover - gstr1ReportedTurnover);
+    const turnoverVariance = roundCurrency(Math.abs(totalInvoiceTurnover - gstr1ReportedTurnover));
 
     const totalInvoiceTax = roundCurrency(invoices.reduce((sum, inv) => sum + inv.taxAmount, 0));
     const gstr1ReportedTax = returnData.summary.totalTax;
-    const taxVariance = Math.abs(totalInvoiceTax - gstr1ReportedTax);
+    const taxVariance = roundCurrency(Math.abs(totalInvoiceTax - gstr1ReportedTax));
 
     const unexplainedNotes: string[] = [];
-    if (turnoverVariance > 1.0) {
+    if (turnoverVariance > GST_RECONCILIATION_TOLERANCE) {
       unexplainedNotes.push(
         `Turnover mismatch of ₹${turnoverVariance.toFixed(2)} detected between Sales Invoices (₹${totalInvoiceTurnover.toFixed(2)}) and GSTR-1 (₹${gstr1ReportedTurnover.toFixed(2)}).`
       );
     }
-    if (taxVariance > 1.0) {
+    if (taxVariance > GST_RECONCILIATION_TOLERANCE) {
       unexplainedNotes.push(
         `Tax mismatch of ₹${taxVariance.toFixed(2)} detected between Sales Invoices (₹${totalInvoiceTax.toFixed(2)}) and GSTR-1 (₹${gstr1ReportedTax.toFixed(2)}).`
       );
