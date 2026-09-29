@@ -22,14 +22,21 @@ export class Gstr1MapperService {
     private gstEngine: GstEngineService,
   ) {}
 
-  async mapGstr1Return(period: string = 'September 2026'): Promise<Gstr1ReturnData> {
-    const invoices = await this.prisma.salesInvoice.findMany({
+  async mapGstr1Return(period: string = 'September 2026', tenantId?: string): Promise<Gstr1ReturnData> {
+    const where: any = {};
+    const rawInvoices = await this.prisma.salesInvoice.findMany({
+      where,
       include: {
         customer: true,
         items: { include: { product: true } },
       },
       orderBy: { invoiceNumber: 'asc' },
     });
+
+    // Multi-tenant scoping: Filter by tenantId if provided
+    const invoices = tenantId
+      ? rawInvoices.filter((inv: any) => (inv.customer as any)?.organizationId === tenantId || (inv as any).organizationId === tenantId)
+      : rawInvoices;
 
     const b2bRows: B2BRow[] = [];
     const b2clRows: B2CLRow[] = [];

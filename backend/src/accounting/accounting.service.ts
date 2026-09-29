@@ -4,6 +4,8 @@ import { GstEngineService } from './gst-engine.service';
 import { Gstr1MapperService } from './gstr1-mapper.service';
 import { Gstr1ValidationService } from './gstr1-validation.service';
 import { GstReconciliationService } from './gst-reconciliation.service';
+import { GstExceptionsService } from './gst-exceptions.service';
+import { Gstr1MetricsService } from './gstr1-metrics.service';
 import { roundCurrency } from './gst-config';
 
 @Injectable()
@@ -14,10 +16,9 @@ export class AccountingService {
     private mapperService: Gstr1MapperService,
     private validationService: Gstr1ValidationService,
     private reconciliationService: GstReconciliationService,
+    private exceptionsService: GstExceptionsService,
+    private metricsService: Gstr1MetricsService,
   ) {}
-
-
-
 
   async autoProvisionInvoices() {
     const orders = await this.prisma.salesOrder.findMany({
@@ -37,9 +38,12 @@ export class AccountingService {
         const dueDate = new Date();
         dueDate.setDate(dueDate.getDate() + 30);
         const subtotal = order.subtotal || order.totalAmount / 1.12;
-        const taxAmount = order.taxAmount || order.totalAmount - subtotal;
-        const cgst = Number((taxAmount / 2).toFixed(2));
-        const sgst = Number((taxAmount / 2).toFixed(2));
+
+        // Use GstEngine to calculate CGST, SGST, IGST based on customer state
+        const state = order.customer?.state || 'Gujarat';
+        const pincode = order.customer?.pincode || '24';
+        const stateCode = pincode.length >= 2 ? pincode.slice(0, 2) : '24';
+        const taxRes = this.gstEngine.calculateTax(subtotal, 12.0, stateCode, state);
 
         await this.prisma.salesInvoice.create({
           data: {
@@ -49,10 +53,10 @@ export class AccountingService {
             invoiceDate: new Date(),
             dueDate,
             subtotal: Number(subtotal.toFixed(2)),
-            taxAmount: Number(taxAmount.toFixed(2)),
-            cgstAmount: cgst,
-            sgstAmount: sgst,
-            igstAmount: 0,
+            taxAmount: taxRes.totalTax,
+            cgstAmount: taxRes.cgstAmount,
+            sgstAmount: taxRes.sgstAmount,
+            igstAmount: taxRes.igstAmount,
             discount: order.discount || 0,
             totalAmount: order.totalAmount,
             paidAmount: 0,
@@ -189,33 +193,38 @@ export class AccountingService {
     return { success: true, message: 'Expense logged successfully', data: expense };
   }
 
-  async validateGST(period: string = 'September 2026') {
-    const report = await this.validationService.validateGstr1Return(period);
+  async validateGST(period: string = 'September 2026', tenantId?: string) {
+    const startTime = Date.now();
+    const report = await this.validationService.validateGstr1Return(period, tenantId);
+    this.metricsService.recordMetric('GSTR1_AUDIT_TIME', Date.now() - startTime);
     return {
       success: true,
       data: report,
     };
   }
 
-  async getGSTR1(period: string = 'September 2026') {
-    const returnData = await this.mapperService.mapGstr1Return(period);
+  async getGSTR1(period: string = 'September 2026', tenantId?: string) {
+    const startTime = Date.now();
+    const returnData = await this.mapperService.mapGstr1Return(period, tenantId);
+    this.metricsService.recordMetric('GSTR1_GENERATION_TIME', Date.now() - startTime);
     return {
       success: true,
       data: returnData,
     };
   }
 
-  async createSnapshot(period: string = 'September 2026', userId: string = 'System Accountant') {
-    const snapshot = await this.validationService.createSnapshot(period, userId);
+  async createSnapshot(period: string = 'September 2026', userId: string = 'System Accountant', userRole: string = 'MANAGER', tenantId?: string) {
+    const snapshot = await this.validationService.createSnapshot(period, userId, userRole, tenantId);
+    this.metricsService.recordMetric('GSTR1_SNAPSHOT_COUNT', 1);
     return {
       success: true,
-      message: 'Immutable GSTR-1 snapshot created successfully',
+      message: 'Immutable GSTR-1 snapshot created successfully & return period locked',
       data: snapshot,
     };
   }
 
-  async getSnapshots(period: string = 'September 2026') {
-    const snapshots = await this.validationService.getSnapshots(period);
+  async getSnapshots(period: string = 'September 2026', tenantId?: string) {
+    const snapshots = await this.validationService.getSnapshots(period, tenantId);
     return {
       success: true,
       data: snapshots,
@@ -223,7 +232,9 @@ export class AccountingService {
   }
 
   async reconcileGSTR1(period: string = 'September 2026') {
+    const startTime = Date.now();
     const report = await this.reconciliationService.reconcileInvoiceVsLedger(period);
+    this.metricsService.recordMetric('GSTR1_RECONCILIATION_TIME', Date.now() - startTime);
     return {
       success: true,
       data: report,
@@ -236,6 +247,36 @@ export class AccountingService {
       success: true,
       data: cdnr,
     };
+  }
+
+  async getExceptions(period: string = 'September 2026', tenantId?: string) {
+    const summary = await this.exceptionsService.getExceptions(period, tenantId);
+    return {
+      success: true,
+      data: summary,
+    };
+  }
+
+  async resolveException(id: string, notes?: string) {
+    const result = this.exceptionsService.resolveException(id, notes);
+    return result;
+  }
+
+  async getMetrics() {
+    return {
+      success: true,
+      data: this.metricsService.getMetrics(),
+    };
+  }
+
+  async lockPeriod(period: string = 'September 2026', userRole: string = 'MANAGER') {
+    const result = this.validationService.lockPeriod(period, userRole);
+    return { success: true, message: `Period ${period} locked successfully`, data: result };
+  }
+
+  async unfreezePeriod(period: string = 'September 2026', userRole: string = 'ADMIN') {
+    const result = this.validationService.unfreezePeriod(period, userRole);
+    return { success: true, message: `Period ${period} unfrozen successfully`, data: result };
   }
 
   async getProcurementFinances() {
@@ -274,3 +315,4 @@ export class AccountingService {
     };
   }
 }
+

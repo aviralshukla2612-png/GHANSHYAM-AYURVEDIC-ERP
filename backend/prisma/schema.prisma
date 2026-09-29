@@ -814,3 +814,51 @@ model CompanySetting {
   address     String   @default("Plot No. 42, Ayurvedic Industrial Zone, Rajkot, Gujarat - 360002")
   updatedAt   DateTime @updatedAt
 }
+
+model CaExportPackage {
+  id             String     @id @default(uuid())
+  organizationId String     @default("org-default")
+  period         String
+  snapshotId     String
+  status         String     @default("GENERATED") // GENERATED, SENT, ARCHIVED
+  fileCount      Int        @default(10)
+  packageHash    String
+  readmeContent  String?
+  generatedBy    String
+  generatedAt    DateTime   @default(now())
+
+  caReviews      CaReview[]
+}
+
+model CaReview {
+  id              String          @id @default(uuid())
+  organizationId  String          @default("org-default")
+  exportPackageId String
+  status          String          @default("NOT_SENT") // NOT_SENT, SENT, UNDER_REVIEW, APPROVED, CHANGES_REQUESTED
+  reviewedBy      String?
+  comments        String?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  exportPackage   CaExportPackage @relation(fields: [exportPackageId], references: [id], onDelete: Cascade)
+}
+
+model GstnFilingHistory {
+  id                  String    @id @default(uuid())
+  organizationId      String    @default("org-default")
+  period              String
+  snapshotId          String
+  status              String    @default("READY_TO_FILE") // DRAFT, VALIDATED, FROZEN, READY_TO_FILE, SUBMITTED, PROCESSING, ACCEPTED, SUBMISSION_FAILED, VALIDATION_FAILED, REJECTED
+  arn                 String?   // Application Reference Number from GSTN
+  externalRefId       String?   // GSP provider transaction reference ID
+  submittedBy         String
+  submissionTimestamp DateTime  @default(now())
+  errorCode           String?
+  errorMessage        String?
+  payloadHash         String
+  gstnPayload         String?   // JSON string of official GSTN payload
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+}
+
+

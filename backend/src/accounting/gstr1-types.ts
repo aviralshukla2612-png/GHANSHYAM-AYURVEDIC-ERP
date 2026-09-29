@@ -186,3 +186,38 @@ export interface Gstr1Snapshot {
   integrityStatus: 'INTEGRITY_VERIFIED' | 'SNAPSHOT_INVALIDATED';
   modifiedInvoices?: string[];
 }
+
+export interface GstExceptionItem {
+  id: string;
+  code: string; // e.g. ERR_GSTIN_MISMATCH, ERR_HSN_MISSING, ERR_GST_LEDGER_MISMATCH, ERR_PERIOD_LOCKED_ATTEMPT
+  severity: 'CRITICAL' | 'WARNING';
+  status: 'UNRESOLVED' | 'INVESTIGATING' | 'RESOLVED';
+  entityNumber: string;
+  message: string;
+  resolutionUrl: string;
+  detectedAt: string;
+}
+
+export interface GstExceptionSummary {
+  criticalCount: number;
+  warningCount: number;
+  resolvedCount: number;
+  totalCount: number;
+  exceptions: GstExceptionItem[];
+}
+
+export interface Gstr1Metrics {
+  GSTR1_GENERATION_TIME: number;
+  GSTR1_AUDIT_TIME: number;
+  GSTR1_RECONCILIATION_TIME: number;
+  GSTR1_SNAPSHOT_COUNT: number;
+  GSTR1_VALIDATION_FAILURES: number;
+  GSTR1_EXPORT_FAILURES: number;
+  GSTN_SUBMISSION_SUCCESS: number;
+  GSTN_SUBMISSION_FAILURE: number;
+  GSTN_REJECTION_COUNT: number;
+  GSTN_POLLING_FAILURE: number;
+  GSTN_RESPONSE_TIME: number;
+}
+
+

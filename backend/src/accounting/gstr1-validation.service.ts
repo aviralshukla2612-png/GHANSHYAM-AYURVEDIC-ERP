@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { Gstr1MapperService } from './gstr1-mapper.service';
 import {
@@ -12,13 +12,43 @@ import { createHash } from 'crypto';
 
 @Injectable()
 export class Gstr1ValidationService {
-  // In-memory store for immutable snapshots (can also be saved to DB)
+  // In-memory store for immutable snapshots & period locks
   private snapshots: Map<string, Gstr1Snapshot> = new Map();
+  private lockedPeriods: Set<string> = new Set();
 
   constructor(
     private prisma: PrismaService,
     private mapperService: Gstr1MapperService,
   ) {}
+
+  // Period Locking Methods
+  isPeriodLocked(period: string = 'September 2026'): boolean {
+    return this.lockedPeriods.has(period);
+  }
+
+  assertPeriodNotLocked(period: string = 'September 2026') {
+    if (this.isPeriodLocked(period)) {
+      throw new BadRequestException(
+        `RETURN PERIOD LOCKED: ${period} GSTR-1 has been frozen. This invoice cannot be modified without authorized period adjustment.`
+      );
+    }
+  }
+
+  lockPeriod(period: string = 'September 2026', userRole: string = 'MANAGER') {
+    if (userRole !== 'MANAGER' && userRole !== 'ADMIN' && userRole !== 'SUPER_ADMIN') {
+      throw new ForbiddenException('Only Manager or Admin can freeze/lock a GSTR-1 return period.');
+    }
+    this.lockedPeriods.add(period);
+    return { success: true, period, status: 'FROZEN' };
+  }
+
+  unfreezePeriod(period: string = 'September 2026', userRole: string = 'ADMIN') {
+    if (userRole !== 'ADMIN' && userRole !== 'SUPER_ADMIN') {
+      throw new ForbiddenException('Only Admin can unfreeze/override a frozen GSTR-1 return period.');
+    }
+    this.lockedPeriods.delete(period);
+    return { success: true, period, status: 'OPEN' };
+  }
 
   // Validate GSTIN format using 15-character GST pattern
   private isValidGstin(gstin?: string | null): boolean {
@@ -44,8 +74,8 @@ export class Gstr1ValidationService {
   }
 
   // Phase 4 Audit & Validation Engine
-  async validateGstr1Return(period: string = 'September 2026'): Promise<Gstr1ValidationReport> {
-    const returnData = await this.mapperService.mapGstr1Return(period);
+  async validateGstr1Return(period: string = 'September 2026', tenantId?: string): Promise<Gstr1ValidationReport> {
+    const returnData = await this.mapperService.mapGstr1Return(period, tenantId);
     const errors: ValidationErrorItem[] = [];
 
     // 1. Audit B2B Invoices for missing or invalid GSTINs
@@ -137,8 +167,10 @@ export class Gstr1ValidationService {
   }
 
   // Helper to compute hash of GST-relevant source fields (ignoring non-tax fields like phone/notes)
-  private async computeGstSourceDataHash(): Promise<{ hash: string; count: number }> {
+  private async computeGstSourceDataHash(tenantId?: string): Promise<{ hash: string; count: number }> {
+    const where: any = {};
     const invoices = await this.prisma.salesInvoice.findMany({
+      where,
       select: {
         id: true,
         invoiceNumber: true,
@@ -173,9 +205,14 @@ export class Gstr1ValidationService {
   }
 
   // Create an Immutable Reporting Snapshot of GSTR-1 (Phase 6 & 7 Integrity)
-  async createSnapshot(period: string = 'September 2026', userId: string = 'System Accountant'): Promise<Gstr1Snapshot> {
-    const returnData = await this.mapperService.mapGstr1Return(period);
-    const validationReport = await this.validateGstr1Return(period);
+  async createSnapshot(period: string = 'September 2026', userId: string = 'System Accountant', userRole: string = 'MANAGER', tenantId?: string): Promise<Gstr1Snapshot> {
+    // RBAC enforcement: Accountant cannot freeze snapshot
+    if (userRole === 'ACCOUNTANT') {
+      throw new ForbiddenException('Accountant role is not authorized to freeze snapshot');
+    }
+
+    const returnData = await this.mapperService.mapGstr1Return(period, tenantId);
+    const validationReport = await this.validateGstr1Return(period, tenantId);
 
     const reconciliationReport: Gstr1ReconciliationReport = {
       period,
@@ -191,7 +228,7 @@ export class Gstr1ValidationService {
     };
 
     // Dual SHA-256 Hashing: Selective GST Source Data Hash & Mapped Return Payload Hash
-    const { hash: sourceDataHash, count: sourceInvoiceCount } = await this.computeGstSourceDataHash();
+    const { hash: sourceDataHash, count: sourceInvoiceCount } = await this.computeGstSourceDataHash(tenantId);
     const payloadHash = createHash('sha256').update(JSON.stringify(returnData)).digest('hex');
 
     const snapshotId = `SNAP-GSTR1-${period.replace(/\s+/g, '-')}-${Date.now()}`;
@@ -212,14 +249,15 @@ export class Gstr1ValidationService {
     };
 
     this.snapshots.set(snapshotId, snapshot);
+    this.lockedPeriods.add(period);
     await this.logAuditEvent('GSTR1_SNAPSHOT_FROZEN', snapshotId, { period, userId, sourceDataHash, payloadHash });
 
     return snapshot;
   }
 
   // Get and Verify Snapshot Integrity against Live DB
-  async getSnapshots(period: string = 'September 2026'): Promise<Gstr1Snapshot[]> {
-    const { hash: currentSourceHash } = await this.computeGstSourceDataHash();
+  async getSnapshots(period: string = 'September 2026', tenantId?: string): Promise<Gstr1Snapshot[]> {
+    const { hash: currentSourceHash } = await this.computeGstSourceDataHash(tenantId);
 
     const list = Array.from(this.snapshots.values()).filter((s) => s.period === period);
     return list.map((snap) => {
@@ -232,4 +270,5 @@ export class Gstr1ValidationService {
       };
     });
   }
+
 }
