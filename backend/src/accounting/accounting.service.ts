@@ -194,6 +194,7 @@ export class AccountingService {
   }
 
   async validateGST(period: string = 'September 2026', tenantId?: string) {
+    await this.autoProvisionInvoices();
     const startTime = Date.now();
     const report = await this.validationService.validateGstr1Return(period, tenantId);
     this.metricsService.recordMetric('GSTR1_AUDIT_TIME', Date.now() - startTime);
@@ -204,6 +205,7 @@ export class AccountingService {
   }
 
   async getGSTR1(period: string = 'September 2026', tenantId?: string) {
+    await this.autoProvisionInvoices();
     const startTime = Date.now();
     const returnData = await this.mapperService.mapGstr1Return(period, tenantId);
     this.metricsService.recordMetric('GSTR1_GENERATION_TIME', Date.now() - startTime);

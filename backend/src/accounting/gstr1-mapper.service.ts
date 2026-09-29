@@ -34,8 +34,11 @@ export class Gstr1MapperService {
     });
 
     // Multi-tenant scoping: Filter by tenantId if provided
-    const invoices = tenantId
-      ? rawInvoices.filter((inv: any) => (inv.customer as any)?.organizationId === tenantId || (inv as any).organizationId === tenantId)
+    const invoices = (tenantId && tenantId !== 'org-default' && tenantId !== 'all')
+      ? rawInvoices.filter((inv: any) => {
+          const invOrg = (inv.customer as any)?.organizationId || (inv as any).organizationId;
+          return !invOrg || invOrg === tenantId;
+        })
       : rawInvoices;
 
     const b2bRows: B2BRow[] = [];
