@@ -232,9 +232,11 @@ export default function ProductionRequestsPage() {
       return;
     }
 
+    const realBomId = activeBom?.id?.startsWith('bom-default-') ? undefined : activeBom?.id;
+
     createPlanMutation.mutate({
       productId: activeProduct.id,
-      bomId: activeBom?.id,
+      bomId: realBomId,
       requestedQuantity: planUnits,
       notes: planNotes || `Manual Production Plan: ${planUnits} units (${planKg} KG total yield)`,
     });
@@ -329,8 +331,8 @@ export default function ProductionRequestsPage() {
                 </tr>
               ) : (
                 requests.map((pr: any) => {
-                  const bomItems = pr.bom?.bomItems || [];
-                  const yieldQty = pr.bom?.expectedYield || 100;
+                  const bomItems = pr.bom?.bomItems?.length ? pr.bom.bomItems : (pr.product?.boms?.[0]?.bomItems || []);
+                  const yieldQty = pr.bom?.expectedYield || pr.product?.boms?.[0]?.expectedYield || 100;
                   const factor = pr.requestedQuantity / yieldQty;
 
                   const breakdown = bomItems.map((bItem: any) => {
@@ -348,7 +350,7 @@ export default function ProductionRequestsPage() {
                   });
 
                   const shortItems = breakdown.filter((it: any) => it.shortageQuantity > 0);
-                  const hasShortage = shortItems.length > 0;
+                  const hasShortage = shortItems.length > 0 || bomItems.length === 0;
                   const hasActiveRMRequest = pr.rmPurchaseRequests && pr.rmPurchaseRequests.length > 0;
 
                   return (
@@ -370,10 +372,12 @@ export default function ProductionRequestsPage() {
                         {hasShortage ? (
                           <div className="space-y-0.5">
                             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-[#FDF2F4] text-[#8C1D2F] font-bold text-[10px] border border-[#F7D2D9]">
-                              <AlertTriangle className="w-3 h-3 text-[#8C1D2F]" /> Shortage: {shortItems.length} {shortItems.length === 1 ? 'herb' : 'herbs'}
+                              <AlertTriangle className="w-3 h-3 text-[#8C1D2F]" /> Shortage: {shortItems.length > 0 ? `${shortItems.length} ${shortItems.length === 1 ? 'herb' : 'herbs'}` : 'Raw Material Required'}
                             </span>
                             <p className="text-[10px] text-[#8C1D2F] font-medium">
-                              {shortItems.map((s: any) => `${s.name}: -${s.shortageQuantity} ${s.unit}`).join(', ')}
+                              {shortItems.length > 0
+                                ? shortItems.map((s: any) => `${s.name}: -${s.shortageQuantity} ${s.unit}`).join(', ')
+                                : 'Stock verification required'}
                             </p>
                           </div>
                         ) : (

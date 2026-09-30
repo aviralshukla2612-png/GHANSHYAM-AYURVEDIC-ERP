@@ -18,7 +18,7 @@ export class ProductionService {
           status: { notIn: ['CANCELLED'] },
           productionRequests: { none: {} },
         },
-        include: { items: { include: { product: { include: { boms: true } } } } },
+        include: { items: { include: { product: { include: { boms: { include: { bomItems: { include: { rawMaterial: true } } } } } } } } },
       });
 
       for (const order of deficitOrders) {
@@ -37,7 +37,26 @@ export class ProductionService {
                 isActive: true,
                 expectedYield: 100,
               },
+              include: { bomItems: { include: { rawMaterial: true } } },
             });
+          }
+
+          const bomItems = bom.bomItems || [];
+          const yieldQty = bom.expectedYield || 100;
+          const factor = item.quantity / yieldQty;
+          let hasShortage = false;
+
+          if (bomItems.length === 0) {
+            hasShortage = true;
+          } else {
+            for (const bItem of bomItems) {
+              const reqMatQty = bItem.quantity * factor;
+              const avail = bItem.rawMaterial?.currentStock || 0;
+              if (reqMatQty > avail) {
+                hasShortage = true;
+                break;
+              }
+            }
           }
 
           const suffix = order.items.length > 1 ? `-${idx + 1}` : '';
@@ -48,8 +67,41 @@ export class ProductionService {
               productId: product.id,
               bomId: bom.id,
               requestedQuantity: item.quantity,
-              status: 'READY_FOR_PRODUCTION',
+              status: hasShortage ? 'MATERIAL_SHORTAGE' : 'READY_FOR_PRODUCTION',
             },
+          });
+        }
+      }
+
+      // Repair existing ProductionRequest records whose status is READY_FOR_PRODUCTION but actually have RM shortages
+      const readyRequests = await this.prisma.productionRequest.findMany({
+        where: { status: 'READY_FOR_PRODUCTION' },
+        include: { bom: { include: { bomItems: { include: { rawMaterial: true } } } } },
+      });
+
+      for (const pr of readyRequests) {
+        const bomItems = pr.bom?.bomItems || [];
+        const yieldQty = pr.bom?.expectedYield || 100;
+        const factor = pr.requestedQuantity / yieldQty;
+        let hasShortage = false;
+
+        if (bomItems.length === 0) {
+          hasShortage = true;
+        } else {
+          for (const bItem of bomItems) {
+            const reqMatQty = bItem.quantity * factor;
+            const avail = bItem.rawMaterial?.currentStock || 0;
+            if (reqMatQty > avail) {
+              hasShortage = true;
+              break;
+            }
+          }
+        }
+
+        if (hasShortage) {
+          await this.prisma.productionRequest.update({
+            where: { id: pr.id },
+            data: { status: 'MATERIAL_SHORTAGE' },
           });
         }
       }
@@ -582,7 +634,9 @@ export class ProductionService {
     });
     if (!product) throw new NotFoundException('Product not found');
 
-    let bom = product.boms.find((b: any) => (data.bomId ? b.id === data.bomId : b.isActive)) || product.boms[0];
+    let bom = product.boms.find((b: any) => b.isActive) ||
+              product.boms.find((b: any) => data.bomId && b.id === data.bomId) ||
+              product.boms[0];
 
     if (!bom) {
       bom = await this.prisma.productBOM.create({
@@ -607,11 +661,16 @@ export class ProductionService {
     let hasShortage = false;
 
     const bomItems = bom.bomItems || [];
-    for (const bItem of bomItems) {
-      const reqMatQty = bItem.quantity * factor;
-      const avail = bItem.rawMaterial?.currentStock || 0;
-      if (reqMatQty > avail) {
-        hasShortage = true;
+    if (bomItems.length === 0) {
+      hasShortage = true;
+    } else {
+      for (const bItem of bomItems) {
+        const reqMatQty = bItem.quantity * factor;
+        const avail = bItem.rawMaterial?.currentStock || 0;
+        if (reqMatQty > avail) {
+          hasShortage = true;
+          break;
+        }
       }
     }
 
@@ -633,7 +692,9 @@ export class ProductionService {
 
     return {
       success: true,
-      message: `Production Requirement for ${requestedQty} units of ${product.name} created successfully!`,
+      message: hasShortage
+        ? `Production Requirement for ${requestedQty} units of ${product.name} created! Raw Material Shortage detected.`
+        : `Production Requirement for ${requestedQty} units of ${product.name} created successfully!`,
       data: pr,
     };
   }
