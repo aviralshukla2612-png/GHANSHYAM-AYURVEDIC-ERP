@@ -1,15 +1,66 @@
 import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { InventoryService } from '../inventory/inventory.service';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
 export class ProductionService {
   constructor(
     private prisma: PrismaService,
     private inventoryService: InventoryService,
+    private notificationsService: NotificationsService,
   ) {}
 
+  async autoHealProductionRequests() {
+    try {
+      const deficitOrders = await this.prisma.salesOrder.findMany({
+        where: {
+          status: { notIn: ['CANCELLED'] },
+          productionRequests: { none: {} },
+        },
+        include: { items: { include: { product: { include: { boms: true } } } } },
+      });
+
+      for (const order of deficitOrders) {
+        for (let idx = 0; idx < order.items.length; idx++) {
+          const item = order.items[idx];
+          const product = item.product;
+          if (!product) continue;
+
+          let bom = product.boms.find((b: any) => b.isActive) || product.boms[0];
+
+          if (!bom) {
+            bom = await this.prisma.productBOM.create({
+              data: {
+                productId: product.id,
+                version: 'v1.0',
+                isActive: true,
+                expectedYield: 100,
+              },
+            });
+          }
+
+          const suffix = order.items.length > 1 ? `-${idx + 1}` : '';
+          await this.prisma.productionRequest.create({
+            data: {
+              requestNo: `PR-${order.orderNumber.replace('SO-', '')}${suffix}`,
+              salesOrderId: order.id,
+              productId: product.id,
+              bomId: bom.id,
+              requestedQuantity: item.quantity,
+              status: 'READY_FOR_PRODUCTION',
+            },
+          });
+        }
+      }
+    } catch (err) {
+      console.error('Error auto-healing production requests:', err);
+    }
+  }
+
   async getDashboard() {
+    await this.autoHealProductionRequests();
+
     const orders = await this.prisma.productionOrder.findMany({
       include: {
         product: true,
@@ -471,44 +522,7 @@ export class ProductionService {
   }
 
   async getRequests() {
-    // Auto-heal: Ensure all sales orders with PRODUCTION_REQUIRED have a productionRequest entry
-    const deficitOrders = await this.prisma.salesOrder.findMany({
-      where: {
-        status: { in: ['PRODUCTION_REQUIRED', 'MATERIAL_REQUIRED', 'PRODUCTION'] },
-        productionRequests: { none: {} },
-      },
-      include: { items: { include: { product: { include: { boms: true } } } } },
-    });
-
-    for (const order of deficitOrders) {
-      if (order.items.length > 0) {
-        const item = order.items[0];
-        const product = item.product;
-        let bom = product.boms.find((b: any) => b.isActive) || product.boms[0];
-
-        if (!bom) {
-          bom = await this.prisma.productBOM.create({
-            data: {
-              productId: product.id,
-              version: 'v1.0',
-              isActive: true,
-              expectedYield: 100,
-            },
-          });
-        }
-
-        await this.prisma.productionRequest.create({
-          data: {
-            requestNo: `PR-${order.orderNumber.replace('SO-', '')}`,
-            salesOrderId: order.id,
-            productId: product.id,
-            bomId: bom.id,
-            requestedQuantity: item.quantity,
-            status: 'READY_FOR_PRODUCTION',
-          },
-        });
-      }
-    }
+    await this.autoHealProductionRequests();
 
     const requests = await this.prisma.productionRequest.findMany({
       where: { status: { notIn: ['BATCH_SCHEDULED', 'COMPLETED', 'CANCELLED'] } },

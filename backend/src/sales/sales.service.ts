@@ -1,9 +1,13 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
 export class SalesService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private notificationsService: NotificationsService,
+  ) {}
 
   async getDashboard() {
     const orders = await this.prisma.salesOrder.findMany({
@@ -164,6 +168,7 @@ export class SalesService {
     const orderItemsData = [];
     const shortageReport = [];
     const rmRequestItemsToCreate = [];
+    const prodItemsToProcess = [];
 
     for (const item of data.items) {
       const product = await this.prisma.product.findUnique({
@@ -193,56 +198,64 @@ export class SalesService {
       const reservedStock = stock ? stock.reservedQuantity : 0;
       const availableToSell = Math.max(0, currentFinishedStock - reservedStock);
 
-      if (availableToSell < item.quantity) {
-        productionRequired = true;
-        const finishedShortage = item.quantity - availableToSell;
+      const finishedShortage = Math.max(0, item.quantity - availableToSell);
+      // All orders placed from Sales SO trigger production demand
+      productionRequired = true;
 
-        // Backend BOM Raw Material Calculation
-        const activeBOM = product.boms[0];
-        const rmBreakdown = [];
+      // Backend BOM Raw Material Calculation
+      const activeBOM = product.boms[0];
+      const rmBreakdown = [];
 
-        if (activeBOM) {
-          const yieldRatio = finishedShortage / (activeBOM.expectedYield || 100);
+      if (activeBOM) {
+        const qtyToProduce = finishedShortage > 0 ? finishedShortage : item.quantity;
+        const yieldRatio = qtyToProduce / (activeBOM.expectedYield || 100);
 
-          for (const bItem of activeBOM.bomItems) {
-            const requiredRMQty = bItem.quantity * yieldRatio;
-            const rmStock = bItem.rawMaterial.currentStock;
-            const rmShortage = Math.max(0, requiredRMQty - rmStock);
+        for (const bItem of activeBOM.bomItems) {
+          const requiredRMQty = bItem.quantity * yieldRatio;
+          const rmStock = bItem.rawMaterial.currentStock;
+          const rmShortage = Math.max(0, requiredRMQty - rmStock);
 
-            if (rmShortage > 0) {
-              materialRequired = true;
-              rmRequestItemsToCreate.push({
-                rawMaterialId: bItem.rawMaterialId,
-                requiredQuantity: requiredRMQty,
-                availableQuantity: rmStock,
-                shortageQuantity: rmShortage,
-                unit: bItem.unit,
-                estimatedRate: bItem.rawMaterial.purchasePrice,
-                totalCost: rmShortage * bItem.rawMaterial.purchasePrice,
-              });
-            }
-
-            rmBreakdown.push({
+          if (rmShortage > 0) {
+            materialRequired = true;
+            rmRequestItemsToCreate.push({
               rawMaterialId: bItem.rawMaterialId,
-              rawMaterialName: bItem.rawMaterial.name,
               requiredQuantity: requiredRMQty,
               availableQuantity: rmStock,
               shortageQuantity: rmShortage,
               unit: bItem.unit,
-              supplierId: bItem.rawMaterial.supplierId,
+              estimatedRate: bItem.rawMaterial.purchasePrice,
+              totalCost: rmShortage * bItem.rawMaterial.purchasePrice,
             });
           }
-        }
 
-        shortageReport.push({
-          productName: product.name,
-          sku: product.sku,
-          requiredQuantity: item.quantity,
-          availableToSell,
-          finishedShortage,
-          rmBreakdown,
-        });
+          rmBreakdown.push({
+            rawMaterialId: bItem.rawMaterialId,
+            rawMaterialName: bItem.rawMaterial.name,
+            requiredQuantity: requiredRMQty,
+            availableQuantity: rmStock,
+            shortageQuantity: rmShortage,
+            unit: bItem.unit,
+            supplierId: bItem.rawMaterial.supplierId,
+          });
+        }
       }
+
+      shortageReport.push({
+        productId: product.id,
+        productName: product.name,
+        sku: product.sku,
+        requiredQuantity: item.quantity,
+        availableToSell,
+        finishedShortage: finishedShortage > 0 ? finishedShortage : item.quantity,
+        rmBreakdown,
+      });
+
+      prodItemsToProcess.push({
+        productId: product.id,
+        productName: product.name,
+        quantity: finishedShortage > 0 ? finishedShortage : item.quantity,
+        activeBOM,
+      });
 
       orderItemsData.push({
         productId: product.id,
@@ -251,14 +264,21 @@ export class SalesService {
         gstRate: product.gstRate,
         totalAmount: itemSubtotal + itemTax,
       });
+
+      // Update reserved stock balance
+      if (stock) {
+        await this.prisma.stockBalance.update({
+          where: { itemId: product.id },
+          data: { reservedQuantity: { increment: Math.min(item.quantity, availableToSell) } },
+        }).catch(() => null);
+      }
     }
 
     const totalAmount = subtotal + taxAmount;
-    let initialStatus = 'CONFIRMED';
-    if (productionRequired) initialStatus = 'PRODUCTION_REQUIRED';
+    let initialStatus = 'PRODUCTION_REQUIRED';
     if (materialRequired) initialStatus = 'MATERIAL_REQUIRED';
 
-    return this.prisma.$transaction(async (tx) => {
+    const result = await this.prisma.$transaction(async (tx) => {
       // Create Sales Order
       const salesOrder = await tx.salesOrder.create({
         data: {
@@ -286,11 +306,10 @@ export class SalesService {
         },
       });
 
-      // If Production Required -> Create ProductionRequest record
-      // If Production Required -> ALWAYS Create ProductionRequest record
-      let prodReq = null;
-      if (productionRequired) {
-        const prodItem = data.items[0];
+      // Create ProductionRequest for each ordered product needing production
+      const createdProdRequests = [];
+      for (let i = 0; i < prodItemsToProcess.length; i++) {
+        const prodItem = prodItemsToProcess[i];
         const product = await tx.product.findUnique({
           where: { id: prodItem.productId },
           include: { boms: true },
@@ -299,7 +318,6 @@ export class SalesService {
         if (product) {
           let targetBom = product.boms.find((b: any) => b.isActive) || product.boms[0];
           if (!targetBom) {
-            // Auto-create active BOM for product if none exists
             targetBom = await tx.productBOM.create({
               data: {
                 productId: product.id,
@@ -310,30 +328,22 @@ export class SalesService {
             });
           }
 
-          prodReq = await tx.productionRequest.create({
+          const suffix = prodItemsToProcess.length > 1 ? `-${i + 1}` : '';
+          const prodReq = await tx.productionRequest.create({
             data: {
-              requestNo: `PR-${Date.now().toString().slice(-6)}`,
+              requestNo: `PR-${orderNo.replace('SO-', '')}${suffix}`,
               salesOrderId: salesOrder.id,
               productId: product.id,
               bomId: targetBom.id,
-              requestedQuantity: shortageReport[0]?.finishedShortage || prodItem.quantity,
+              requestedQuantity: prodItem.quantity,
               status: materialRequired ? 'MATERIAL_SHORTAGE' : 'READY_FOR_PRODUCTION',
             },
           });
-
-          // System notification for Production Supervisor
-          await tx.notification.create({
-            data: {
-              type: 'PRODUCTION_REQUEST_CREATED',
-              title: 'NEW PRODUCTION REQUEST GENERATED',
-              message: `Production Request ${prodReq.requestNo} generated for Sales Order ${orderNo} (${product.name} - ${prodReq.requestedQuantity} Units).`,
-              recipientRole: 'PRODUCTION',
-            },
-          });
+          createdProdRequests.push(prodReq);
         }
       }
 
-      // If Raw Material Shortage -> Auto-generate RawMaterialPurchaseRequest draft for Sales Execution
+      // If Raw Material Shortage -> Auto-generate RawMaterialPurchaseRequest
       let rmReq = null;
       if (materialRequired && rmRequestItemsToCreate.length > 0) {
         const defaultSupplierId = shortageReport[0]?.rmBreakdown?.[0]?.supplierId || null;
@@ -343,9 +353,9 @@ export class SalesService {
           data: {
             requestNo: `RM-REQ-${Date.now().toString().slice(-6)}`,
             salesOrderId: salesOrder.id,
-            productionRequestId: prodReq?.id,
+            productionRequestId: createdProdRequests[0]?.id || null,
             supplierId: defaultSupplierId,
-            requestedById: data.salespersonId || (await tx.user.findFirst({ where: { userRoles: { some: { role: { name: 'SALES' } } } } })).id,
+            requestedById: data.salespersonId || (await tx.user.findFirst({ where: { userRoles: { some: { role: { name: 'SALES' } } } } }))?.id || data.customerId,
             priority: 'HIGH',
             requiredDate: new Date(Date.now() + 5 * 86400000),
             estimatedCost: totalEstCost,
@@ -355,63 +365,88 @@ export class SalesService {
           },
           include: { items: { include: { rawMaterial: true } }, supplier: true },
         });
-
-        await tx.notification.create({
-          data: {
-            type: 'RM_REQUEST_CREATED',
-            title: 'RAW MATERIAL PURCHASE REQUEST GENERATED',
-            message: `Request ${rmReq.requestNo} initiated for Sales Order ${orderNo}. Estimated Cost: ₹${totalEstCost}`,
-            recipientRole: 'STOCK_MANAGER',
-          },
-        });
-      }
-
-      // Create Sales Invoice if ready
-      if (!productionRequired && !materialRequired) {
-        const invNo = `INV-${Date.now().toString().slice(-6)}`;
-        await tx.salesInvoice.create({
-          data: {
-            invoiceNumber: invNo,
-            salesOrderId: salesOrder.id,
-            customerId: customer.id,
-            dueDate: new Date(Date.now() + 30 * 86400000),
-            subtotal,
-            taxAmount,
-            cgstAmount: taxAmount / 2,
-            sgstAmount: taxAmount / 2,
-            totalAmount,
-            balanceAmount: totalAmount,
-            status: 'ISSUED',
-            items: {
-              create: orderItemsData.map((it) => ({
-                productId: it.productId,
-                quantity: it.quantity,
-                unitPrice: it.unitPrice,
-                gstRate: it.gstRate,
-                taxAmount: (it.unitPrice * it.quantity * it.gstRate) / 100,
-                totalAmount: it.totalAmount,
-              })),
-            },
-          },
-        });
       }
 
       return {
-        success: true,
-        message: materialRequired
-          ? `Sales Order ${orderNo} created. Raw Material Shortage detected & Purchase Request ${rmReq?.requestNo} initiated.`
-          : productionRequired
-          ? `Sales Order ${orderNo} created. Production Request ${prodReq?.requestNo} generated.`
-          : `Sales Order ${orderNo} & Invoice created successfully.`,
-        data: {
-          salesOrder,
-          productionRequired,
-          materialRequired,
-          shortageReport,
-          productionRequest: prodReq,
-          rawMaterialPurchaseRequest: rmReq,
-        },
+        salesOrder,
+        productionRequired,
+        materialRequired,
+        shortageReport,
+        createdProdRequests,
+        rawMaterialPurchaseRequest: rmReq,
       };
     });
+
+    // Create notifications via NotificationsService (saves to DB and emits WebSocket events)
+    try {
+      // 1. Notification for SUPER_ADMIN
+      await this.notificationsService.createNotification({
+        type: 'SALES_ORDER_CREATED',
+        title: 'NEW SALES ORDER CREATED',
+        message: `Sales Order ${orderNo} created for customer ${customer.name} (Total: ₹${totalAmount.toLocaleString('en-IN')}).`,
+        recipientRole: 'SUPER_ADMIN',
+        priority: 'NORMAL',
+        entityType: 'SalesOrder',
+        entityId: result.salesOrder.id,
+      });
+
+      // 2. Notification for SALES
+      await this.notificationsService.createNotification({
+        type: 'SALES_ORDER_CREATED',
+        title: 'SALES ORDER CONFIRMED',
+        message: `Order ${orderNo} created for ${customer.name}. Status: ${initialStatus}.`,
+        recipientRole: 'SALES',
+        priority: 'NORMAL',
+        entityType: 'SalesOrder',
+        entityId: result.salesOrder.id,
+      });
+
+      // 3. Notification for PRODUCTION
+      if (result.createdProdRequests?.length > 0) {
+        for (const pr of result.createdProdRequests) {
+          await this.notificationsService.createNotification({
+            type: 'PRODUCTION_REQUEST_CREATED',
+            title: 'NEW PRODUCTION REQUEST GENERATED',
+            message: `Production Request ${pr.requestNo} generated for Sales Order ${orderNo} (${pr.requestedQuantity} Units).`,
+            recipientRole: 'PRODUCTION',
+            priority: 'HIGH',
+            entityType: 'ProductionRequest',
+            entityId: pr.id,
+          });
+        }
+      }
+
+      // 4. Notification for STOCK_MANAGER if RM Shortage
+      if (result.rawMaterialPurchaseRequest) {
+        await this.notificationsService.createNotification({
+          type: 'RM_REQUEST_CREATED',
+          title: 'RAW MATERIAL PURCHASE REQUEST GENERATED',
+          message: `Request ${result.rawMaterialPurchaseRequest.requestNo} initiated for Sales Order ${orderNo}.`,
+          recipientRole: 'STOCK_MANAGER',
+          priority: 'HIGH',
+          entityType: 'RawMaterialPurchaseRequest',
+          entityId: result.rawMaterialPurchaseRequest.id,
+        });
+      }
+    } catch (notifErr) {
+      console.error('Failed to emit sales order notifications:', notifErr);
+    }
+
+    return {
+      success: true,
+      message: materialRequired
+        ? `Sales Order ${orderNo} created. Raw Material Shortage detected & Purchase Request ${result.rawMaterialPurchaseRequest?.requestNo} initiated.`
+        : `Sales Order ${orderNo} created & Production Request ${result.createdProdRequests[0]?.requestNo || ''} generated successfully.`,
+      data: {
+        salesOrder: result.salesOrder,
+        productionRequired: result.productionRequired,
+        materialRequired: result.materialRequired,
+        shortageReport: result.shortageReport,
+        productionRequest: result.createdProdRequests[0] || null,
+        productionRequests: result.createdProdRequests,
+        rawMaterialPurchaseRequest: result.rawMaterialPurchaseRequest,
+      },
+    };
   }
 }
+

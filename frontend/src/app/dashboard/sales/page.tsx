@@ -72,6 +72,10 @@ export default function SalesDashboardPage() {
     onSuccess: (res: any) => {
       queryClient.invalidateQueries({ queryKey: ['salesDashboard'] });
       queryClient.invalidateQueries({ queryKey: ['salesOrders'] });
+      queryClient.invalidateQueries({ queryKey: ['productionDashboard'] });
+      queryClient.invalidateQueries({ queryKey: ['productionRequests'] });
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
+      queryClient.invalidateQueries({ queryKey: ['productionRequestsNav'] });
       setOrderResultMsg(res);
     },
   });
