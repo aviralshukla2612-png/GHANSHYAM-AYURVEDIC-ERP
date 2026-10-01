@@ -129,6 +129,11 @@ export class InventoryService {
             where: { batchNumber: data.batchNumber },
             data: { status: 'RELEASED_TO_STOCK' },
           }).catch(() => null);
+        } else {
+          await tx.productionBatch.updateMany({
+            where: { productId: data.itemId, status: 'COMPLETED' },
+            data: { status: 'RELEASED_TO_STOCK' },
+          }).catch(() => null);
         }
 
         const pendingOrders = await tx.salesOrder.findMany({

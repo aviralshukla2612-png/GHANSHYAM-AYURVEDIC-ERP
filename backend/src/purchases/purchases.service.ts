@@ -240,6 +240,13 @@ export class PurchasesService {
         data: { status: 'RECEIVED' },
       });
 
+      if (po.rmPurchaseRequestId) {
+        await tx.rawMaterialPurchaseRequest.update({
+          where: { id: po.rmPurchaseRequestId },
+          data: { status: 'RECEIVED' },
+        }).catch(() => null);
+      }
+
       // AUTO-RECHECK BOM SHORTAGES ON BLOCKED PRODUCTION REQUESTS
       const blockedRequests = await tx.productionRequest.findMany({
         where: { status: { in: ['MATERIAL_SHORTAGE', 'SUBMITTED', 'PENDING'] } },
